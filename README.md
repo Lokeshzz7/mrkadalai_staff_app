@@ -55,15 +55,20 @@ A modern, responsive, and user-friendly restaurant management dashboard built wi
 ---
 
 ## Project Setup
-
+#### 1. Clone the repository
 ```bash
-# 1. Clone the repository
 git clone https://github.com/your-username/restaurant-dashboard.git
+```
+#### 2. Go inside the folder
+```bash
 cd restaurant-dashboard
-
-# 2. Install dependencies
+```
+#### 3. Install dependencies
+```bash
 npm install
-
-# 3. Start the development server
+```
+#### 4. Start the development server
+```bash
 npm run dev
 ```
+
