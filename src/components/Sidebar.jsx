@@ -23,14 +23,14 @@ const Sidebar = ({ onClose }) => {
     ]
 
     return (
-        <div className="bg-gray-900 text-white w-64 min-h-screen flex flex-col">
+        <div className="bg-nav text-primary w-64 min-h-screen flex flex-col">
             {/* Logo and close button */}
             <div className="p-6 border-b border-gray-700 flex items-center justify-between">
                 <h1 className="text-lg sm:text-xl font-bold">Restaurant Dashboard</h1>
                 {/* Close button (only mobile) */}
                 <button
                     type="button"
-                    className="lg:hidden p-1 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white"
+                    className="lg:hidden p-1 rounded-md text-primary hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white"
                     onClick={onClose}
                 >
                     <X className="h-6 w-6" />
@@ -47,8 +47,8 @@ const Sidebar = ({ onClose }) => {
                                 onClick={() => onClose && onClose()}
                                 className={({ isActive }) =>
                                     `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                        ? 'bg-theme text-white'
+                                        : 'text-primary hover:bg-none hover:text-black'
                                     }`
                                 }
                             >
@@ -62,11 +62,11 @@ const Sidebar = ({ onClose }) => {
 
             {/* Bottom Section */}
             <div className="p-4 border-t border-gray-700">
-                <button className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors">
+                <button className="flex items-center w-full px-4 py-2 text-sm font-medium text-primary rounded-lg hover:bg-gray-800 hover:text-white transition-colors">
                     <Settings className="mr-3 h-5 w-5 flex-shrink-0" />
                     <span className="truncate">Settings</span>
                 </button>
-                <button className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors mt-2">
+                <button className="flex items-center w-full px-4 py-2 text-sm font-medium text-primary rounded-lg hover:bg-gray-800 hover:text-white transition-colors mt-2">
                     <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
                     <span className="truncate">Logout</span>
                 </button>

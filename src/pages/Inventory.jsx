@@ -38,19 +38,32 @@ const Inventory = () => {
             <div className="flex justify-between items-center">
                 <div className="flex space-x-4">
                     <Button
-                        variant={activeTab === 'stock' ? 'primary' : 'secondary'}
+                        variant={activeTab === 'stock' ? 'black' : 'secondary'}
                         onClick={() => setActiveTab('stock')}
                     >
                         Stock Availability
                     </Button>
                     <Button
-                        variant={activeTab === 'activity' ? 'primary' : 'secondary'}
+                        variant={activeTab === 'activity' ? 'black' : 'secondary'}
                         onClick={() => setActiveTab('activity')}
                     >
                         Activity Log
                     </Button>
                 </div>
-                <Button onClick={() => setShowAddModal(true)}>Add Stock</Button>
+                <div className="flex space-x-2">
+                <Button
+                    className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium"
+                    onClick={() => setShowAddModal(true)}
+                >
+                    Add Stock
+                </Button>
+                <Button
+                    className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium"
+                    onClick={() => alert('Detect Stock clicked')}
+                >
+                    Detect Stock
+                </Button>
+            </div>
             </div>
 
 

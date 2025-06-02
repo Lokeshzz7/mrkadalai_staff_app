@@ -30,25 +30,25 @@ const Dashboard = () => {
                 // * Stats Cards
              */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Card className="text-center">
-                    <h3 className="text-2xl font-bold text-blue-600">45</h3>
+                <Card Black className="text-center">
                     <p className="text-gray-600">Today's Orders</p>
+                    <h3 className="text-2xl font-bold text-blue-600">45</h3>
                 </Card>
-                <Card className="text-center">
-                    <h3 className="text-2xl font-bold text-green-600">₹12,340</h3>
+                <Card Black className="text-center">
                     <p className="text-gray-600">Today's Revenue</p>
+                    <h3 className="text-2xl font-bold text-green-600">₹12,340</h3>
                 </Card>
-                <Card className="text-center">
-                    <h3 className="text-2xl font-bold text-orange-600">23</h3>
+                <Card Black className="text-center">
                     <p className="text-gray-600">Active Orders</p>
+                    <h3 className="text-2xl font-bold text-orange-600">23</h3>
                 </Card>
-                <Card className="text-center">
-                    <h3 className="text-2xl font-bold text-red-600">3</h3>
+                <Card Black className="text-center">
                     <p className="text-gray-600">Low Stock Items</p>
+                    <h3 className="text-2xl font-bold text-red-600">3</h3>
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
                 {/* 
                     // * Recent Orders Table
                 */}
@@ -56,16 +56,6 @@ const Dashboard = () => {
                     <Table
                         headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
                         data={recentOrders}
-                    />
-                </Card>
-
-                {/* 
-                    // * Low Stock Table
-                */}
-                <Card title="Low Stock Alert">
-                    <Table
-                        headers={['Item', 'Current', 'Threshold', 'Status']}
-                        data={lowStockItems}
                     />
                 </Card>
             </div>

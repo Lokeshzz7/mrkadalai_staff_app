@@ -3,7 +3,7 @@ import { Search, Bell, User, Menu } from 'lucide-react'
 
 const Header = ({ onMenuClick }) => {
     return (
-        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <header className="bg-header shadow-sm border-b border-gray-200 sticky top-0 z-30">
             <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Mobile menu button */}
@@ -40,7 +40,7 @@ const Header = ({ onMenuClick }) => {
                         {/* Profile */}
                         <div className="flex items-center space-x-2 sm:space-x-3">
                             <div className="flex-shrink-0">
-                                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-theme flex items-center justify-center">
                                     <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                                 </div>
                             </div>
