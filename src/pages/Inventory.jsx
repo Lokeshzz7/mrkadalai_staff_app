@@ -51,13 +51,13 @@ const Inventory = () => {
                     </Button>
                 </div>
                 <div className="flex space-x-2">
-                <Button
+                <Button variant='success'
                     className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium"
                     onClick={() => setShowAddModal(true)}
                 >
                     Add Stock
                 </Button>
-                <Button
+                <Button variant='danger'
                     className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium"
                     onClick={() => alert('Detect Stock clicked')}
                 >

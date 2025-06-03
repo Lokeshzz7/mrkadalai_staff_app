@@ -23,10 +23,9 @@ const Sidebar = ({ onClose }) => {
     ]
 
     return (
-        <div className="bg-nav text-primary w-64 min-h-screen flex flex-col">
+        <div className="bg-nav text-primary w-64 h-full flex flex-col overflow-hidden">
             {/* Logo and close button */}
-            <div className="p-6 border-b border-gray-700 flex items-center justify-between">
-                <h1 className="text-lg sm:text-xl font-bold">Restaurant Dashboard</h1>
+            <div className="lg:hidden p-6 flex items-center justify-between">
                 {/* Close button (only mobile) */}
                 <button
                     type="button"
@@ -38,7 +37,7 @@ const Sidebar = ({ onClose }) => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 py-6">
+            <nav className="flex-1 px-4 py-6 overflow-y-auto">
                 <ul className="space-y-2">
                     {navigation.map((item) => (
                         <li key={item.name}>

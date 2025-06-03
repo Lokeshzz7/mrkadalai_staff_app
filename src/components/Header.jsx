@@ -14,6 +14,7 @@ const Header = ({ onMenuClick }) => {
                     >
                         <Menu className="h-6 w-6" />
                     </button>
+                    <img src='' alt='logo' className='h-8 w-auto'/>
 
                     {/* Left Section  -   SearchBar*/}
                     <div className="flex-1 max-w-md mx-4">
