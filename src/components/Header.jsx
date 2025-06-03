@@ -1,7 +1,13 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { Search, Bell, User, Menu } from 'lucide-react'
+import { AuthContext } from '../context/AuthContext'
 
 const Header = ({ onMenuClick }) => {
+    const { user, signOut } = useContext(AuthContext)
+
+    // !  Extract email from the (context) instaed of the name as of now 
+    const userName = user?.email?.split('@')[0] || 'Guest'
+
     return (
         <header className="bg-header shadow-sm border-b border-gray-200 sticky top-0 z-30">
             <div className="px-4 sm:px-6 lg:px-8">
@@ -14,9 +20,9 @@ const Header = ({ onMenuClick }) => {
                     >
                         <Menu className="h-6 w-6" />
                     </button>
-                    <img src='' alt='logo' className='h-8 w-auto'/>
+                    <img src="" alt="logo" className="h-8 w-auto" />
 
-                    {/* Left Section  -   SearchBar*/}
+                    {/* Left Section  - SearchBar */}
                     <div className="flex-1 max-w-md mx-4">
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -46,10 +52,18 @@ const Header = ({ onMenuClick }) => {
                                 </div>
                             </div>
                             <div className="hidden sm:block">
-                                <div className="text-xs sm:text-sm font-medium text-gray-900">Admin User</div>
+                                <div className="text-xs sm:text-sm font-medium text-gray-900">{userName}</div>
                                 <div className="text-xs text-gray-500">Restaurant Manager</div>
                             </div>
                         </div>
+
+                        {/* Logout button */}
+                        <button
+                            onClick={signOut}
+                            className="ml-2 px-3 py-1 text-xs font-semibold text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                            Logout
+                        </button>
                     </div>
                 </div>
             </div>

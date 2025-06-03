@@ -1,27 +1,99 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
-import Notifications from './pages/Notifications'
-import ManualOrder from './pages/ManualOrder'
-import Inventory from './pages/Inventory'
-import Wallet from './pages/Wallet'
-import Reports from './pages/Reports'
+// Fixed App.jsx - Simplified routing structure
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext.jsx';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+
+// Auth pages
+import SignIn from './pages/auth/SignIn.jsx';
+import SignUp from './pages/auth/SignUp.jsx';
+
+// Protected pages
+import Dashboard from './pages/Dashboard';
+import Notifications from './pages/Notifications';
+import ManualOrder from './pages/ManualOrder';
+import Inventory from './pages/Inventory';
+import Wallet from './pages/Wallet';
+import Reports from './pages/Reports';
 
 function App() {
   return (
-    <Router>
-      <Layout>
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/notifications" element={<Notifications />} />
-          <Route path="/manual-order" element={<ManualOrder />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/reports" element={<Reports />} />
+          {/* Public routes - these should render without Layout */}
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+
+          {/* Protected routes - each wrapped individually */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Notifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manual-order"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ManualOrder />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Inventory />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Wallet />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Reports />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/signin" replace />} />
         </Routes>
-      </Layout>
-    </Router>
-  )
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
