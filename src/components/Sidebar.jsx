@@ -9,7 +9,8 @@ import {
     BarChart3,
     Settings,
     LogOut,
-    X
+    X,
+    Clock
 } from 'lucide-react'
 
 const Sidebar = ({ onClose }) => {
@@ -17,6 +18,7 @@ const Sidebar = ({ onClose }) => {
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
         { name: 'Notifications', href: '/notifications', icon: Bell },
         { name: 'Manual Order', href: '/manual-order', icon: PlusCircle },
+        { name: 'Order History', href: '/order-history', icon: Clock },
         { name: 'Inventory', href: '/inventory', icon: Package },
         { name: 'Wallet', href: '/wallet', icon: Wallet },
         { name: 'Reports', href: '/reports', icon: BarChart3 },

@@ -8,33 +8,47 @@ import Modal from '../components/ui/Modal'
 const Inventory = () => {
     const [showAddModal, setShowAddModal] = useState(false)
     const [activeTab, setActiveTab] = useState('stock')
+    const [selectedItem, setSelectedItem] = useState('All')
+    const [dateFrom, setDateFrom] = useState('')
+    const [dateTo, setDateTo] = useState('')
+    const [filteredHistory, setFilteredHistory] = useState([])
 
-    {/*
-        // ! Fake Data for the STock table and should be replaced with the API call
-    */}
+    const items = ['Tomatoes', 'Onions', 'Chicken', 'Rice']
+
     const stockData = [
-        ['Tomatoes', '5 kg', '10 kg', '20 kg', <Badge variant="danger">Low</Badge>],
-        ['Onions', '15 kg', '10 kg', '25 kg', <Badge variant="success">Sufficient</Badge>],
-        ['Chicken', '8 kg', '5 kg', '15 kg', <Badge variant="success">Sufficient</Badge>],
-        ['Rice', '3 kg', '10 kg', '30 kg', <Badge variant="danger">Critical</Badge>]
+        ['Tomatoes', 'Vegetable', '5 kg'],
+        ['Onions', 'Vegetable', '15 kg'],
+        ['Chicken', 'Meat', '8 kg'],
+        ['Rice', 'Grain', '3 kg']
     ]
-
-    {/*
-        // ! Fake Data for the Activity table and should be replaced with the API call
-    */}
 
     const activityData = [
-        ['Added', 'Tomatoes', '10 kg', '2024-01-15', 'Admin'],
-        ['Deducted', 'Chicken', '2 kg', '2024-01-15', 'Kitchen'],
-        ['Added', 'Rice', '5 kg', '2024-01-14', 'Admin'],
-        ['Deducted', 'Onions', '3 kg', '2024-01-14', 'Kitchen']
+        ['Tomatoes', 'Vegetable', '2024-01-15', '10 kg Added'],
+        ['Chicken', 'Meat', '2024-01-15', '2 kg Deducted'],
+        ['Rice', 'Grain', '2024-01-14', '5 kg Added'],
+        ['Onions', 'Vegetable', '2024-01-14', '3 kg Deducted']
     ]
+
+    const filteredStock = selectedItem === 'All'
+        ? stockData
+        : stockData.filter(([item]) => item === selectedItem)
+
+    const handleApplyDateFilter = () => {
+        if (!dateFrom || !dateTo) return
+        const from = new Date(dateFrom)
+        const to = new Date(dateTo)
+
+        const filtered = activityData.filter(([_, __, date]) => {
+            const current = new Date(date)
+            return current >= from && current <= to
+        })
+
+        setFilteredHistory(filtered)
+    }
 
     return (
         <div className="space-y-6">
-            {/* 
-                // * Button with Actions
-            */}
+            {/* Tabs */}
             <div className="flex justify-between items-center">
                 <div className="flex space-x-4">
                     <Button
@@ -47,52 +61,93 @@ const Inventory = () => {
                         variant={activeTab === 'activity' ? 'black' : 'secondary'}
                         onClick={() => setActiveTab('activity')}
                     >
-                        Activity Log
+                        Stock History
                     </Button>
                 </div>
-                <div className="flex space-x-2">
-                <Button variant='success'
-                    className="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium"
-                    onClick={() => setShowAddModal(true)}
-                >
-                    Add Stock
-                </Button>
-                <Button variant='danger'
-                    className="px-4 py-2 bg-red-600 text-white rounded text-sm font-medium"
-                    onClick={() => alert('Detect Stock clicked')}
-                >
-                    Detect Stock
-                </Button>
-            </div>
             </div>
 
+            {/* Filters */}
+            {activeTab === 'stock' && (
+                <div className="flex space-x-4">
+                    <select
+                        value={selectedItem}
+                        onChange={(e) => setSelectedItem(e.target.value)}
+                        className="p-2 border rounded"
+                    >
+                        <option value="All">All Items</option>
+                        {items.map(item => (
+                            <option key={item} value={item}>{item}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
-            {/* 
-                // *Content (active tab) 
-            */}
+            {activeTab === 'activity' && (
+                <div className="flex space-x-4 items-end">
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">From Date</label>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="p-2 border rounded"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">To Date</label>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="p-2 border rounded"
+                        />
+                    </div>
+                    <Button variant="black" onClick={handleApplyDateFilter}>
+                        Apply
+                    </Button>
+                </div>
+            )}
+
+            {/* Content */}
             {activeTab === 'stock' && (
                 <Card title="Current Stock Status">
                     <Table
-                        headers={['Item Name', 'Current Qty', 'Threshold', 'Standard Qty', 'Status']}
-                        data={stockData}
+                        headers={['Item', 'Category', 'Available Stock', 'Actions']}
+                        data={filteredStock.map(([item, category, stock]) => [
+                            item,
+                            category,
+                            stock,
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant="success"
+                                    className="px-3 py-1 text-xs"
+                                    onClick={() => setShowAddModal(true)}
+                                >
+                                    Add
+                                </Button>
+                                <Button
+                                    variant="danger"
+                                    className="px-3 py-1 text-xs"
+                                    onClick={() => alert(`Deduct clicked for ${item}`)}
+                                >
+                                    Deduct
+                                </Button>
+                            </div>
+                        ])}
                     />
                 </Card>
             )}
 
             {activeTab === 'activity' && (
-                <Card title="Recent Activities">
+                <Card title="Stock History">
                     <Table
-                        headers={['Action', 'Item Name', 'Quantity', 'Date', 'Logged By']}
-                        data={activityData}
+                        headers={['Item', 'Category', 'Date', 'Quantity']}
+                        data={filteredHistory.length ? filteredHistory : activityData}
                     />
                 </Card>
             )}
 
-            {/* 
-                //TODO should add an stock form to get the stock details 
-            
-                // ! This modal is for time being and should be removed afterwards
-            */}
+            {/* Modal */}
             <Modal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
@@ -109,10 +164,9 @@ const Inventory = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
                         <select className="w-full p-2 border rounded">
                             <option>Select Item</option>
-                            <option>Tomatoes</option>
-                            <option>Onions</option>
-                            <option>Chicken</option>
-                            <option>Rice</option>
+                            {items.map(item => (
+                                <option key={item}>{item}</option>
+                            ))}
                         </select>
                     </div>
                     <div>

@@ -7,22 +7,31 @@ import Modal from '../components/ui/Modal'
 
 const Wallet = () => {
     const [showRechargeModal, setShowRechargeModal] = useState(false)
+    const [searchText, setSearchText] = useState('')
 
-    {/*
-        // ! Fake Data for the transaction data table and should be replaced with the API call
-    */}
+    // Sample Transaction Data (replace with API call later)
     const transactionData = [
-        ['#TXN001', 'John Doe', '2:30 PM', '₹500', <Badge variant="success">Success</Badge>],
-        ['#TXN002', 'Jane Smith', '2:25 PM', '₹300', <Badge variant="success">Success</Badge>],
-        ['#TXN003', 'Mike Johnson', '2:20 PM', '₹250', <Badge variant="pending">Pending</Badge>],
-        ['#TXN004', 'Sarah Wilson', '2:15 PM', '₹400', <Badge variant="success">Success</Badge>]
+        { id: '#TXN001', name: 'John Doe', date: '2025-06-01', amount: '₹500' },
+        { id: '#TXN002', name: 'Jane Smith', date: '2025-06-01', amount: '₹300' },
+        { id: '#TXN003', name: 'Mike Johnson', date: '2025-06-01', amount: '₹250' },
+        { id: '#TXN004', name: 'Sarah Wilson', date: '2025-06-01', amount: '₹400' }
     ]
+
+    // Filtered data based on search input
+    const filteredTransactions = transactionData.filter(txn =>
+        txn.id.toLowerCase().includes(searchText.toLowerCase()) ||
+        txn.name.toLowerCase().includes(searchText.toLowerCase())
+    )
 
     return (
         <div className="space-y-6">
-            {/*
-                // * Summary Cards
-            */}
+            {/* Header Row: Wallet Recharge + Manual Button */}
+            <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold">Wallet Recharge</h2>
+                <Button variant='success' onClick={() => setShowRechargeModal(true)}>Manual Recharge</Button>
+            </div>
+
+            {/* Summary Cards
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card className="text-center">
                     <h3 className="text-2xl font-bold text-green-600">₹25,340</h3>
@@ -40,29 +49,34 @@ const Wallet = () => {
                     <h3 className="text-2xl font-bold text-purple-600">₹567</h3>
                     <p className="text-gray-600">Average Recharge</p>
                 </Card>
+            </div> */}
+
+            {/* Header Row: Recharge History + Search */}
+            <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Recharge History</h2>
+                <input
+                    type="text"
+                    placeholder="Search by ID or Name"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className="border rounded p-2 w-64"
+                />
             </div>
 
-            {/*
-                 //  * Transactions Table
-            */}
-            <Card
-                title="Recent Transactions"
-                className="relative"
-            >
-                <div className="absolute top-4 right-4">
-                    <Button onClick={() => setShowRechargeModal(true)}>Manual Recharge</Button>
-                </div>
+            {/* Transactions Table */}
+            <Card>
                 <Table
-                    headers={['Transaction ID', 'Student Name', 'Time', 'Amount', 'Status']}
-                    data={transactionData}
+                    headers={['Transaction ID', 'Student Name', 'Date', 'Amount']}
+                    data={filteredTransactions.map(txn => [
+                        txn.id,
+                        txn.name,
+                        txn.date,
+                        txn.amount
+                    ])}
                 />
             </Card>
 
-            {/* 
-                //TODO should add an Recharge  form to add the recharge  details 
-            
-                // ! This modal is for time being and should be removed afterwards
-            */}
+            {/* Manual Recharge Modal */}
             <Modal
                 isOpen={showRechargeModal}
                 onClose={() => setShowRechargeModal(false)}

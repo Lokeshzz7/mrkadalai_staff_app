@@ -16,6 +16,7 @@ import ManualOrder from './pages/ManualOrder';
 import Inventory from './pages/Inventory';
 import Wallet from './pages/Wallet';
 import Reports from './pages/Reports';
+import OrderHistory from './pages/OrderHistory.jsx';
 
 function App() {
   return (
@@ -53,6 +54,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ManualOrder />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/order-history"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <OrderHistory />
                 </Layout>
               </ProtectedRoute>
             }
