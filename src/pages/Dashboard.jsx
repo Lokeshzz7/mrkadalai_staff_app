@@ -1,16 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Table from '../components/ui/Table'
 import Badge from '../components/ui/Badge'
 
 const Dashboard = () => {
-    // ! Fake Data for recent orders (should be replaced with API)
-    const recentOrders = [
-        ['#12345', 'John Doe', 'Pizza, Burger', '2:30 PM', <Badge variant="pending">Pending</Badge>],
-        ['#12346', 'Jane Smith', 'Pasta, Salad', '2:25 PM', <Badge variant="success">Completed</Badge>],
-        ['#12347', 'Mike Johnson', 'Sandwich', '2:20 PM', <Badge variant="warning">In Progress</Badge>]
-    ]
 
     // ! Fake Data for low stock (should be replaced with API)
     const lowStockItems = [
@@ -18,6 +12,32 @@ const Dashboard = () => {
         ['Cheese', '2 kg', '8 kg', <Badge variant="danger">Critical</Badge>],
         ['Bread', '15 units', '20 units', <Badge variant="warning">Low</Badge>]
     ]
+
+    const [searchQuery, setSearchQuery] = useState('')
+
+    // ! Fake Data for recent orders (should be replaced with API)
+
+    const allOrders = [
+        { id: '#12345', customer: 'John Doe', items: 'Pizza, Burger', time: '2:30 PM', status: 'pending' },
+        { id: '#12346', customer: 'Jane Smith', items: 'Pasta, Salad', time: '2:25 PM', status: 'success' },
+        { id: '#12347', customer: 'Mike Johnson', items: 'Sandwich', time: '2:20 PM', status: 'warning' },
+        { id: '#12345', customer: 'John Doe', items: 'Pizza, Burger', time: '2:30 PM', status: 'pending' },
+        { id: '#12346', customer: 'Jane Smith', items: 'Pasta, Salad', time: '2:25 PM', status: 'success' },
+        { id: '#12347', customer: 'Mike Johnson', items: 'Sandwich', time: '2:20 PM', status: 'warning' }
+    ]
+
+    const filteredOrders = allOrders.filter(order =>
+        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customer.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const recentOrders = filteredOrders.map(order => ([
+        order.id,
+        order.customer,
+        order.items,
+        order.time,
+        <Badge variant={order.status}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</Badge>
+    ]))
 
     return (
         <div className="space-y-6">
@@ -62,7 +82,17 @@ const Dashboard = () => {
 
             {/* Recent Orders Table */}
             <div>
-                <Card title="Recent Orders">
+                <Card>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold">Recent Orders</h2>
+                        <input
+                            type="text"
+                            placeholder="Search by ID or Customer..."
+                            className="border px-3 py-1 rounded"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
                     <Table
                         headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
                         data={recentOrders}
