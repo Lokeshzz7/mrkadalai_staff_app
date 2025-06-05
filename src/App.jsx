@@ -17,6 +17,7 @@ import Inventory from './pages/Inventory';
 import Wallet from './pages/Wallet';
 import Reports from './pages/Reports';
 import OrderHistory from './pages/OrderHistory.jsx';
+import Settings from './pages/Settings.jsx';
 
 function App() {
   return (
@@ -94,6 +95,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Reports />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Settings/>
                 </Layout>
               </ProtectedRoute>
             }

@@ -235,7 +235,6 @@ const Notifications = () => {
     {/* Inventory Cards - Scrollable */}
     <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-hide scrollbar-track-gray-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                // ! Fake Data for inventory (should be replaced with API)
                 {(
                 inventoryTab === 'food'
                     ? [
