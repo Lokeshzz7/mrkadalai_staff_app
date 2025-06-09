@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import dayjs from 'dayjs'
+import Table from '../components/ui/Table'
+import Badge from '../components/ui/Badge'
 
 const OrderHistory = () => {
     const today = dayjs().startOf('day')
@@ -19,7 +21,7 @@ const OrderHistory = () => {
             type: 'Dine-In',
             time: '12:30 PM',
             items: '2x Biryani, 1x Coke',
-            status: 'Delivered'
+            status: 'delivered'
         },
         {
             id: 'ORD002',
@@ -28,7 +30,7 @@ const OrderHistory = () => {
             type: 'Takeaway',
             time: '1:15 PM',
             items: '1x Butter Chicken',
-            status: 'Cancelled'
+            status: 'cancelled'
         },
         {
             id: 'ORD003',
@@ -37,11 +39,28 @@ const OrderHistory = () => {
             type: 'Delivery',
             time: '7:45 PM',
             items: '3x Ice Cream',
-            status: 'Scheduled'
+            status: 'scheduled'
         }
     ]
 
     const filteredOrders = orders.filter(order => order.date === selectedDate.format('YYYY-MM-DD'))
+
+
+    const orderTableData = filteredOrders.map(order => ([
+        order.id,
+        order.customer,
+        order.type,
+        order.time,
+        order.items,
+        <Badge
+            variant={order.status}
+        >
+            {order.status}
+
+        </Badge>,
+        <Button >View</Button>
+    ]))
+
 
     return (
         <div className="space-y-6">
@@ -69,56 +88,15 @@ const OrderHistory = () => {
                     </Button>
                 </div>
 
-                {selectedDate.isSame(today, 'day') && (
-                    <Button className="bg-theme">Add Order</Button>
-                )}
             </div>
 
             <Card>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left table-auto border">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                <th className="p-2 border">Order ID</th>
-                                <th className="p-2 border">Customer</th>
-                                <th className="p-2 border">Type</th>
-                                <th className="p-2 border">Time</th>
-                                <th className="p-2 border">Items</th>
-                                <th className="p-2 border">Status</th>
-                                <th className="p-2 border">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredOrders.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" className="text-center text-gray-500 p-4">No orders found for this date.</td>
-                                </tr>
-                            ) : (
-                                filteredOrders.map(order => (
-                                    <tr key={order.id}>
-                                        <td className="p-2 border">{order.id}</td>
-                                        <td className="p-2 border">{order.customer}</td>
-                                        <td className="p-2 border">{order.type}</td>
-                                        <td className="p-2 border">{order.time}</td>
-                                        <td className="p-2 border">{order.items}</td>
-                                        <td className="p-2 border">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium
-                                                ${order.status === 'Delivered' && 'bg-green-100 text-green-700'}
-                                                ${order.status === 'Cancelled' && 'bg-red-100 text-red-700'}
-                                                ${order.status === 'Scheduled' && 'bg-yellow-100 text-yellow-700'}
-                                            `}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td className="p-2 border">
-                                            {/* You can put action buttons or links here */}
-                                            <Button size="xs" variant="secondary">Details</Button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                    <Table
+                        headers={['Order id', 'Customer name', 'Order Type', 'Time', 'items', 'status', 'Action']}
+                        data={orderTableData}
+                    />
+
                 </div>
             </Card>
         </div>
