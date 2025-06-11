@@ -11,6 +11,6 @@ export const ROUTES = {
 
 export const API_ENDPOINTS = {
     SIGN_UP: '/auth/signup',
-    SIGN_IN: '/auth/signin',
+    SIGN_IN: '/auth/staffsignin',
     SIGN_OUT: '/auth/signout',
 };

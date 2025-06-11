@@ -8,7 +8,7 @@ export const apiRequest = async (endpoint, options = {}) => {
             'Content-Type': 'application/json',
             ...options.headers,
         },
-        credentials: 'include', 
+        credentials: 'include',
         ...options,
     };
 
@@ -18,6 +18,17 @@ export const apiRequest = async (endpoint, options = {}) => {
 
     try {
         const response = await fetch(url, config);
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+
+        if (!contentType || !contentType.includes('application/json')) {
+            // If not JSON, get text to see what we actually received
+            const text = await response.text();
+            console.error('Non-JSON response received:', text);
+            throw new Error(`Server returned non-JSON response. Status: ${response.status}`);
+        }
+
         const data = await response.json();
 
         if (!response.ok) {
@@ -26,6 +37,12 @@ export const apiRequest = async (endpoint, options = {}) => {
 
         return data;
     } catch (error) {
+        // Enhanced error logging
+        console.error('API Request failed:', {
+            url,
+            error: error.message,
+            stack: error.stack
+        });
         throw error;
     }
 };
