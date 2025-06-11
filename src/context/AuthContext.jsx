@@ -17,6 +17,12 @@ const authReducer = (state, action) => {
                 permissions: action.payload.permissions,
                 error: null
             };
+        case 'UPDATE_PERMISSIONS':
+            return {
+                ...state,
+                permissions: action.payload.permissions,
+                user: action.payload.user
+            };
         case 'LOGOUT':
             return {
                 ...state,
@@ -83,6 +89,15 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // Helper function to clear all stored data
+    const clearStoredData = useCallback(() => {
+        try {
+            localStorage.removeItem('outletDetails');
+        } catch (error) {
+            console.error('Error clearing stored data:', error);
+        }
+    }, []);
+
     useEffect(() => {
         checkAuthStatus();
     }, []);
@@ -105,16 +120,39 @@ export const AuthProvider = ({ children }) => {
 
                 dispatch({ type: 'LOGIN_SUCCESS', payload: userData });
             } else {
+                clearStoredData();
                 dispatch({ type: 'LOGOUT' });
             }
         } catch (error) {
+            clearStoredData();
             dispatch({ type: 'LOGOUT' });
         }
     };
 
+    // New function to refresh permissions without full re-authentication
+    const refreshPermissions = useCallback(async () => {
+        if (!state.isAuthenticated) return;
+
+        try {
+            const response = await authService.checkAuth();
+            if (response && response.user) {
+                const userData = {
+                    user: response.user,
+                    permissions: response.user.staffDetails?.permissions || []
+                };
+                dispatch({ type: 'UPDATE_PERMISSIONS', payload: userData });
+            }
+        } catch (error) {
+            console.error('Error refreshing permissions:', error);
+        }
+    }, [state.isAuthenticated]);
+
     const signUp = async (userData) => {
         dispatch({ type: 'LOADING' });
         try {
+            // Clear any existing data first
+            clearStoredData();
+
             const response = await authService.signUp(userData);
             const loginData = {
                 user: response.user,
@@ -138,6 +176,9 @@ export const AuthProvider = ({ children }) => {
     const signIn = async (credentials) => {
         dispatch({ type: 'LOADING' });
         try {
+            // Clear any existing data first
+            clearStoredData();
+
             const response = await authService.signIn(credentials);
             console.log('SignIn success:', response);
 
@@ -166,13 +207,13 @@ export const AuthProvider = ({ children }) => {
         dispatch({ type: 'LOADING' });
         try {
             await authService.signOut();
-            // Clear outlet details from localStorage
-            localStorage.removeItem('outletDetails');
+            // Clear all stored data
+            clearStoredData();
             dispatch({ type: 'LOGOUT' });
         } catch (error) {
             dispatch({ type: 'ERROR', payload: error.message });
-            // Clear outlet details even if signout fails
-            localStorage.removeItem('outletDetails');
+            // Clear stored data even if signout fails
+            clearStoredData();
             dispatch({ type: 'LOGOUT' });
         }
     };
@@ -185,6 +226,7 @@ export const AuthProvider = ({ children }) => {
         clearError,
         hasPermission,
         getStoredOutletDetails,
+        refreshPermissions, // New function to refresh permissions
     };
 
     return (
