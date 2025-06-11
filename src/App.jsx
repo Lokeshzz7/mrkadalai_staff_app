@@ -1,9 +1,9 @@
-// Fixed App.jsx - Simplified routing structure
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import PermissionRoute from './components/PermissionRoute.jsx';
 
 // Auth pages
 import SignIn from './pages/auth/SignIn.jsx';
@@ -28,7 +28,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
 
-          {/* Protected routes - each wrapped individually */}
+          {/* Protected routes with permission checks */}
           <Route
             path="/"
             element={
@@ -39,6 +39,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/notifications"
             element={
@@ -49,36 +50,46 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/manual-order"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <ManualOrder />
+                  <PermissionRoute requiredPermission="BILLING">
+                    <ManualOrder />
+                  </PermissionRoute>
                 </Layout>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/order-history"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <OrderHistory />
+                  <PermissionRoute requiredPermission="BILLING">
+                    <OrderHistory />
+                  </PermissionRoute>
                 </Layout>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/inventory"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Inventory />
+                  <PermissionRoute requiredPermission="INVENTORY">
+                    <Inventory />
+                  </PermissionRoute>
                 </Layout>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/wallet"
             element={
@@ -89,22 +100,26 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/reports"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Reports />
+                  <PermissionRoute requiredPermission="REPORTS">
+                    <Reports />
+                  </PermissionRoute>
                 </Layout>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/settings"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Settings/>
+                  <Settings />
                 </Layout>
               </ProtectedRoute>
             }
