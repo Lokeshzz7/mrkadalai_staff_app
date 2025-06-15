@@ -1,12 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Table from '../components/ui/Table'
 import Badge from '../components/ui/Badge'
+import { apiRequest } from '../utils/api'
+import { useOutletDetails } from '../utils/outletUtils'
 
 const Dashboard = () => {
     const [orderInput, setOrderInput] = useState('')
     const [selectedOrder, setSelectedOrder] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [allOrders, setAllOrders] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    
+    const { outletId } = useOutletDetails()
+
     // ! Fake Data for low stock (should be replaced with API)
     const lowStockItems = [
         ['Tomatoes', '5 kg', '10 kg', <Badge variant="danger">Low</Badge>],
@@ -14,73 +23,109 @@ const Dashboard = () => {
         ['Bread', '15 units', '20 units', <Badge variant="warning">Low</Badge>]
     ]
 
-    const [searchQuery, setSearchQuery] = useState('')
+    // Fetch recent orders from API
+    useEffect(() => {
+        const fetchRecentOrders = async () => {
+            if (!outletId) {
+                setError('Outlet ID not found')
+                setLoading(false)
+                return
+            }
 
-    // ! Fake Data for recent orders (should be replaced with API)
+            try {
+                setLoading(true)
+                const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/`)
+                
+                if (response.orders) {
+                    // Transform API data to match the expected format
+                    const transformedOrders = response.orders.map(order => {
+                        // Format items string
+                        const itemsString = order.items.map(item => 
+                            `${item.name} (${item.quantity})`
+                        ).join(', ')
 
-    const allOrders = [
-        { id: '#12345', customer: 'John Doe', items: 'Pizza, Burger', time: '2:30 PM', status: 'pending' },
-        { id: '#12346', customer: 'Jane Smith', items: 'Pasta, Salad', time: '2:25 PM', status: 'success' },
-        { id: '#12347', customer: 'Mike Johnson', items: 'Sandwich', time: '2:20 PM', status: 'warning' },
-        { id: '#12345', customer: 'John Doe', items: 'Pizza, Burger', time: '2:30 PM', status: 'pending' },
-        { id: '#12346', customer: 'Jane Smith', items: 'Pasta, Salad', time: '2:25 PM', status: 'success' },
-        { id: '#12347', customer: 'Mike Johnson', items: 'Sandwich', time: '2:20 PM', status: 'warning' }
-    ]
+                        // Format time from createdAt
+                        const orderTime = new Date(order.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
 
+                        return {
+                            id: `#${order.billNumber}`,
+                            customer: order.customerName,
+                            items: itemsString,
+                            time: orderTime,
+                            status: order.status.toLowerCase(),
+                            billNumber: order.billNumber,
+                            orderType: order.orderType,
+                            paymentMode: order.paymentMode,
+                            originalItems: order.items,
+                            createdAt: order.createdAt
+                        }
+                    })
+                    
+                    setAllOrders(transformedOrders)
+                } else {
+                    setAllOrders([])
+                }
+                setError(null)
+            } catch (err) {
+                console.error('Error fetching recent orders:', err)
+                setError('Failed to fetch recent orders')
+                setAllOrders([])
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchRecentOrders()
+    }, [outletId])
+
+    // Filter orders based on search query
     const filteredOrders = allOrders.filter(order =>
         order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
+    // Transform filtered orders for table display
     const recentOrders = filteredOrders.map(order => ([
         order.id,
         order.customer,
         order.items,
         order.time,
-        <Badge variant={order.status}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</Badge>
+        <Badge variant={getStatusVariant(order.status)} key={order.billNumber}>
+            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+        </Badge>
     ]))
 
-    const orders = {
-        '12345': {
-            id: '#12345',
-            customer: 'John Doe',
-            items: [
-                { name: 'Margherita Pizza', quantity: 1, price: 12.99 },
-                { name: 'Classic Burger', quantity: 2, price: 8.99 },
-                { name: 'Coca Cola', quantity: 2, price: 2.50 }
-            ],
-            time: '2:30 PM',
-            status: 'pending',
-            total: 35.97,
-            phone: '+1 234-567-8900',
-            address: '123 Main St, City, State'
-        },
-        '12346': {
-            id: '#12346',
-            customer: 'Jane Smith',
-            items: [
-                { name: 'Chicken Pasta', quantity: 1, price: 14.99 },
-                { name: 'Caesar Salad', quantity: 1, price: 7.99 }
-            ],
-            time: '2:25 PM',
-            status: 'completed',
-            total: 22.98,
-            phone: '+1 234-567-8901',
-            address: '456 Oak Ave, City, State'
-        },
-        '12347': {
-            id: '#12347',
-            customer: 'Mike Johnson',
-            items: [
-                { name: 'Club Sandwich', quantity: 1, price: 9.99 }
-            ],
-            time: '2:20 PM',
-            status: 'preparing',
-            total: 9.99,
-            phone: '+1 234-567-8902',
-            address: '789 Pine St, City, State'
+    //! Create orders object for lookup functionality (should replace with actual logic) 
+    const orders = {}
+    allOrders.forEach(order => {
+        const cleanId = order.id.replace('#', '')
+        
+        const total = order.originalItems.reduce((sum, item) => {
+            const itemPrice = item.price || 10.00
+            return sum + (itemPrice * item.quantity)
+        }, 0)
+
+        orders[cleanId] = {
+            id: order.id,
+            customer: order.customer,
+            items: order.originalItems.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price || 10.00 // Default price if not available
+            })),
+            time: order.time,
+            status: order.status,
+            total: total,
+            phone: '+1 234-567-8900', // Default phone - replace with real data if available
+            address: '123 Main St, City, State', // Default address - replace with real data if available
+            orderType: order.orderType,
+            paymentMode: order.paymentMode,
+            createdAt: order.createdAt
         }
-    }
+    })
 
     const handleButtonClick = (value) => {
         if (value === 'clear') {
@@ -282,6 +327,12 @@ const Dashboard = () => {
                                                 <h4 className="font-semibold text-lg">{selectedOrder.id}</h4>
                                                 <p className="text-gray-600">{selectedOrder.customer}</p>
                                                 <p className="text-sm text-gray-500">{selectedOrder.phone}</p>
+                                                {selectedOrder.orderType && (
+                                                    <p className="text-sm text-blue-500">Type: {selectedOrder.orderType}</p>
+                                                )}
+                                                {selectedOrder.paymentMode && (
+                                                    <p className="text-sm text-green-500">Payment: {selectedOrder.paymentMode}</p>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <Badge variant={getStatusVariant(selectedOrder.status)}>
@@ -338,10 +389,27 @@ const Dashboard = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <Table
-                        headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
-                        data={recentOrders}
-                    />
+                    
+                    {loading ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">Loading recent orders...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-8">
+                            <p className="text-red-500">{error}</p>
+                        </div>
+                    ) : recentOrders.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500">
+                                {searchQuery ? 'No orders found matching your search.' : 'No recent orders found.'}
+                            </p>
+                        </div>
+                    ) : (
+                        <Table
+                            headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
+                            data={recentOrders}
+                        />
+                    )}
                 </Card>
             </div>
         </div>
