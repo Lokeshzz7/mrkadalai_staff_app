@@ -4,6 +4,7 @@ import Button from '../components/ui/Button'
 import Table from '../components/ui/Table'
 import Modal from '../components/ui/Modal'
 import { apiRequest } from '../utils/api'
+import { useOutletDetails } from '../utils/outletUtils'
 
 const Inventory = () => {
     const getFormattedDate = (date) => {
@@ -30,20 +31,26 @@ const Inventory = () => {
     const [error, setError] = useState('')
     const [modalLoading, setModalLoading] = useState(false)
 
-    //! should get outlet id through staff
-
-    // const outletId = localStorage.getItem('outletId'); 
+    // Get outlet ID from utility hook
+    const { outletId } = useOutletDetails()
 
     useEffect(() => {
-        fetchStocks()
-        fetchStockHistory()
-    }, [])
+        if (outletId) {
+            fetchStocks()
+            fetchStockHistory()
+        }
+    }, [outletId])
 
     const fetchStocks = async () => {
+        if (!outletId) {
+            setError('Outlet ID not found')
+            return
+        }
+
         setLoading(true)
         setError('')
         try {
-            const response = await apiRequest(`/admin/outlets/get-stocks/${outletId}`)
+            const response = await apiRequest(`/staff/outlets/get-stocks/${outletId}/`)
             if (response.stocks) {
                 const transformedData = response.stocks.map(stock => [
                     stock.name,
@@ -64,6 +71,11 @@ const Inventory = () => {
     }
 
     const fetchStockHistory = async () => {
+        if (!outletId) {
+            setError('Outlet ID not found')
+            return
+        }
+
         if (!dateFrom || !dateTo) {
             setError('Please select both from and to dates')
             return
@@ -72,7 +84,7 @@ const Inventory = () => {
         setLoading(true)
         setError('')
         try {
-            const response = await apiRequest('/admin/outlets/get-stock-history', {
+            const response = await apiRequest('/staff/outlets/get-stock-history', {
                 method: 'POST',
                 body: {
                     outletId,
@@ -105,10 +117,15 @@ const Inventory = () => {
             return
         }
 
+        if (!outletId) {
+            setError('Outlet ID not found')
+            return
+        }
+
         setModalLoading(true)
         setError('')
         try {
-            const response = await apiRequest('/admin/outlets/add-stocks/', {
+            const response = await apiRequest('/staff/outlets/add-stock/', {
                 method: 'POST',
                 body: {
                     productId: selectedItem.id,
@@ -137,10 +154,15 @@ const Inventory = () => {
             return
         }
 
+        if (!outletId) {
+            setError('Outlet ID not found')
+            return
+        }
+
         setModalLoading(true)
         setError('')
         try {
-            const response = await apiRequest('/admin/outlets/deduct-stocks/', {
+            const response = await apiRequest('/staff/outlets/deduct-stock/', {
                 method: 'POST',
                 body: {
                     productId: selectedItem.id,
@@ -195,6 +217,17 @@ const Inventory = () => {
 
     const handleApplyDateFilter = () => {
         fetchStockHistory()
+    }
+
+    // Show loading or error if outletId is not available
+    if (!outletId) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                    Loading outlet information...
+                </div>
+            </div>
+        )
     }
 
     return (
