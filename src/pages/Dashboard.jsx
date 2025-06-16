@@ -13,7 +13,7 @@ const Dashboard = () => {
     const [allOrders, setAllOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    
+
     const { outletId } = useOutletDetails()
 
     // ! Fake Data for low stock (should be replaced with API)
@@ -35,12 +35,12 @@ const Dashboard = () => {
             try {
                 setLoading(true)
                 const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/`)
-                
+
                 if (response.orders) {
                     // Transform API data to match the expected format
                     const transformedOrders = response.orders.map(order => {
                         // Format items string
-                        const itemsString = order.items.map(item => 
+                        const itemsString = order.items.map(item =>
                             `${item.name} (${item.quantity})`
                         ).join(', ')
 
@@ -63,7 +63,7 @@ const Dashboard = () => {
                             createdAt: order.createdAt
                         }
                     })
-                    
+
                     setAllOrders(transformedOrders)
                 } else {
                     setAllOrders([])
@@ -87,6 +87,16 @@ const Dashboard = () => {
         order.customer.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'pending': return 'pending'
+            case 'preparing': return 'info'
+            case 'completed': return 'success'
+            case 'cancelled': return 'danger'
+            default: return 'default'
+        }
+    }
+
     // Transform filtered orders for table display
     const recentOrders = filteredOrders.map(order => ([
         order.id,
@@ -102,7 +112,7 @@ const Dashboard = () => {
     const orders = {}
     allOrders.forEach(order => {
         const cleanId = order.id.replace('#', '')
-        
+
         const total = order.originalItems.reduce((sum, item) => {
             const itemPrice = item.price || 10.00
             return sum + (itemPrice * item.quantity)
@@ -163,15 +173,7 @@ const Dashboard = () => {
         }
     }
 
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'pending': return 'pending'
-            case 'preparing': return 'info'
-            case 'completed': return 'success'
-            case 'cancelled': return 'danger'
-            default: return 'default'
-        }
-    }
+
 
     return (
         <div className="space-y-6">
@@ -389,7 +391,7 @@ const Dashboard = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    
+
                     {loading ? (
                         <div className="text-center py-8">
                             <p className="text-gray-500">Loading recent orders...</p>
