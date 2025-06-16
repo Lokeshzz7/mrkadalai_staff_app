@@ -19,7 +19,7 @@ const Wallet = () => {
     const [rechargeForm, setRechargeForm] = useState({
         customerId: '',
         amount: '',
-        method: 'Cash',
+        method: 'CASH',
         notes: ''
     })
 
@@ -74,7 +74,7 @@ const Wallet = () => {
             setRechargeForm({
                 customerId: '',
                 amount: '',
-                method: 'Cash',
+                method: 'CASH',
                 notes: ''
             })
             setShowRechargeModal(false)
@@ -189,7 +189,7 @@ const Wallet = () => {
                     setRechargeForm({
                         customerId: '',
                         amount: '',
-                        method: 'Cash',
+                        method: 'CASH',
                         notes: ''
                     })
                 }}
@@ -204,7 +204,7 @@ const Wallet = () => {
                                 setRechargeForm({
                                     customerId: '',
                                     amount: '',
-                                    method: 'Cash',
+                                    method: 'CASH',
                                     notes: ''
                                 })
                             }}
@@ -259,10 +259,9 @@ const Wallet = () => {
                             onChange={(e) => handleFormChange('method', e.target.value)}
                             disabled={rechargeLoading}
                         >
-                            <option value="Cash">Cash</option>
-                            <option value="Card">Card</option>
+                            <option value="CASH">CASH</option>
+                            <option value="CARD">CARD</option>
                             <option value="UPI">UPI</option>
-                            <option value="Net Banking">Net Banking</option>
                         </select>
                     </div>
                     <div>
