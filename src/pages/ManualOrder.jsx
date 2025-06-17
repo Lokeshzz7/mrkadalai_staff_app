@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
-
+import { apiRequest } from '../utils/api'
+import { useOutletDetails } from '../utils/outletUtils'
 
 const ManualOrder = () => {
     const [selectedItems, setSelectedItems] = useState([])
@@ -15,18 +16,44 @@ const ManualOrder = () => {
     const [currentOrder, setCurrentOrder] = useState(null)
     const [paymentMethod, setPaymentMethod] = useState('')
     const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+    const [menuItems, setMenuItems] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(null)
 
-    const menuItems = [
-        { id: 1, name: 'Spring Rolls', price: 120, category: 'meals', img: 'https://via.placeholder.com/100' },
-        { id: 2, name: 'Chicken Wings', price: 180, category: 'meals', img: 'https://via.placeholder.com/100' },
-        { id: 3, name: 'Chicken Biryani', price: 250, category: 'meals', img: 'https://via.placeholder.com/100' },
-        { id: 4, name: 'Veg Fried Rice', price: 180, category: 'meals', img: 'https://via.placeholder.com/100' },
-        { id: 5, name: 'Butter Chicken', price: 280, category: 'meals', img: 'https://via.placeholder.com/100' },
-        { id: 6, name: 'Ice Cream', price: 80, category: 'desserts', img: 'https://via.placeholder.com/100' },
-        { id: 7, name: 'Gulab Jamun', price: 60, category: 'desserts', img: 'https://via.placeholder.com/100' },
-        { id: 8, name: 'Coke', price: 50, category: 'beverages', img: 'https://via.placeholder.com/100' },
-        { id: 9, name: 'Lassi', price: 70, category: 'beverages', img: 'https://via.placeholder.com/100' }
-    ]
+    const { outletId } = useOutletDetails()
+
+    // Fetch products from backend
+    useEffect(() => {
+        const fetchProducts = async () => {
+            if (!outletId) return
+
+            try {
+                setIsLoading(true)
+                setError(null)
+                const response = await apiRequest(`/staff/outlets/get-products-in-stock/${outletId}`)
+                
+                // Transform backend data to match frontend structure
+                const transformedProducts = response.products.map(product => ({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    category: product.category.toLowerCase(),
+                    img: product.imageUrl || 'https://via.placeholder.com/100',
+                    description: product.description,
+                    quantityAvailable: product.quantityAvailable
+                }))
+                
+                setMenuItems(transformedProducts)
+            } catch (error) {
+                console.error('Error fetching products:', error)
+                setError('Failed to load products. Please try again.')
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchProducts()
+    }, [outletId])
 
     // Generate unique order ID
     const generateOrderId = () => {
@@ -38,9 +65,14 @@ const ManualOrder = () => {
     const addToOrder = (item) => {
         const exists = selectedItems.find(i => i.id === item.id)
         if (exists) {
-            setSelectedItems(selectedItems.map(i =>
-                i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-            ))
+            // Check if we can add more (don't exceed available quantity)
+            if (exists.quantity < item.quantityAvailable) {
+                setSelectedItems(selectedItems.map(i =>
+                    i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+                ))
+            } else {
+                alert(`Only ${item.quantityAvailable} units available for ${item.name}`)
+            }
         } else {
             setSelectedItems([...selectedItems, { ...item, quantity: 1 }])
         }
@@ -54,6 +86,11 @@ const ManualOrder = () => {
         if (newQuantity === 0) {
             removeFromOrder(itemId)
         } else {
+            const item = menuItems.find(i => i.id === itemId)
+            if (newQuantity > item.quantityAvailable) {
+                alert(`Only ${item.quantityAvailable} units available for ${item.name}`)
+                return
+            }
             setSelectedItems(selectedItems.map(item =>
                 item.id === itemId ? { ...item, quantity: newQuantity } : item
             ))
@@ -87,18 +124,58 @@ const ManualOrder = () => {
         setShowConfirmModal(false)
     }
 
-    const handlePaymentComplete = () => {
+    const handlePaymentComplete = async () => {
+        if (!paymentMethod || !currentOrder) return
+
         setIsProcessingPayment(true)
-        // Simulate payment processing
-        setTimeout(() => {
-            setIsProcessingPayment(false)
-            alert(`Payment successful! Order ${currentOrder.id} has been placed.`)
+        
+        try {
+            // Prepare order data for backend
+            const orderData = {
+                outletId: outletId,
+                totalAmount: currentOrder.total,
+                paymentMethod: paymentMethod.toUpperCase(),
+                items: currentOrder.items.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    unitPrice: item.price
+                }))
+            }
+
+            // Submit order to backend
+            const response = await apiRequest('/staff/outlets/add-manual-order/', {
+                method: 'POST',
+                body: orderData
+            })
+
+            // Success
+            alert(`Payment successful! Order ${response.order.id} has been placed.`)
+            
             // Reset everything
             setSelectedItems([])
             setCurrentOrder(null)
             setPaymentMethod('')
             setCurrentPage('menu')
-        }, 2000)
+            
+            // Refresh products to update available quantities
+            const productsResponse = await apiRequest(`/staff/outlets/get-products-in-stock/${outletId}`)
+            const transformedProducts = productsResponse.products.map(product => ({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                category: product.category.toLowerCase(),
+                img: product.imageUrl || 'https://via.placeholder.com/100',
+                description: product.description,
+                quantityAvailable: product.quantityAvailable
+            }))
+            setMenuItems(transformedProducts)
+
+        } catch (error) {
+            console.error('Error placing order:', error)
+            alert(`Failed to place order: ${error.message}`)
+        } finally {
+            setIsProcessingPayment(false)
+        }
     }
 
     const handleBackToMenu = () => {
@@ -110,6 +187,9 @@ const ManualOrder = () => {
         (activeCategory === 'all' || item.category === activeCategory) &&
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
+
+    // Get unique categories from menuItems
+    const categories = [...new Set(menuItems.map(item => item.category))]
 
     // Payment Page Component
     const PaymentPage = () => (
@@ -156,10 +236,10 @@ const ManualOrder = () => {
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
                             {[
-                                { id: 'cash', name: 'Cash', icon: '💵' },
-                                { id: 'upi', name: 'UPI', icon: '📱' },
-                                { id: 'card', name: 'Credit Card', icon: '💳' },
-                                { id: 'wallet', name: 'Wallet', icon: '👛' }
+                                { id: 'CASH', name: 'Cash', icon: '💵' },
+                                { id: 'UPI', name: 'UPI', icon: '📱' },
+                                { id: 'CARD', name: 'Credit Card', icon: '💳' },
+                                { id: 'WALLET', name: 'Wallet', icon: '👛' }
                             ].map(method => (
                                 <div
                                     key={method.id}
@@ -301,53 +381,85 @@ const ManualOrder = () => {
 
             {/* Right: Menu Items */}
             <div className="lg:col-span-2 bg-white h-full overflow-y-auto p-4">
-                {/* Filters */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-                    <input
-                        type="text"
-                        placeholder="Search items..."
-                        className="w-full md:w-1/2 p-2 border rounded-lg"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <div className="flex gap-2">
-                        <Button
-                            variant={activeCategory === 'all' ? 'black' : 'secondary'}
-                            onClick={() => setActiveCategory('all')}
-                            size="sm"
-                        >All</Button>
-                        <Button
-                            variant={activeCategory === 'meals' ? 'black' : 'secondary'}
-                            onClick={() => setActiveCategory('meals')}
-                            size="sm"
-                        >Meals</Button>
-                        <Button
-                            variant={activeCategory === 'desserts' ? 'black' : 'secondary'}
-                            onClick={() => setActiveCategory('desserts')}
-                            size="sm"
-                        >Desserts</Button>
-                        <Button
-                            variant={activeCategory === 'beverages' ? 'black' : 'secondary'}
-                            onClick={() => setActiveCategory('beverages')}
-                            size="sm"
-                        >Beverages</Button>
+                {/* Loading State */}
+                {isLoading && (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="text-gray-500">Loading products...</div>
                     </div>
-                </div>
+                )}
 
-                {/* Menu Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredMenuItems.map(item => (
-                        <div key={item.id} className="border rounded-lg p-4 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                            <img src={item.img} alt={item.name} className="w-24 h-24 object-cover mb-2 rounded" />
-                            <h4 className="font-semibold">{item.name}</h4>
-                            <p className="text-lg font-bold text-green-600 mb-2">₹{item.price}</p>
-                            <Button size="sm" onClick={() => addToOrder(item)}>Add to Order</Button>
+                {/* Error State */}
+                {error && (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="text-red-500 text-center">
+                            <p>{error}</p>
+                            <Button 
+                                onClick={() => window.location.reload()} 
+                                className="mt-2"
+                                size="sm"
+                            >
+                                Retry
+                            </Button>
                         </div>
-                    ))}
-                    {filteredMenuItems.length === 0 && (
-                        <p className="col-span-full text-center text-gray-500 py-8">No items found</p>
-                    )}
-                </div>
+                    </div>
+                )}
+
+                {/* Menu Content */}
+                {!isLoading && !error && (
+                    <>
+                        {/* Filters */}
+                        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+                            <input
+                                type="text"
+                                placeholder="Search items..."
+                                className="w-full md:w-1/2 p-2 border rounded-lg"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <div className="flex gap-2 flex-wrap">
+                                <Button
+                                    variant={activeCategory === 'all' ? 'black' : 'secondary'}
+                                    onClick={() => setActiveCategory('all')}
+                                    size="sm"
+                                >All</Button>
+                                {categories.map(category => (
+                                    <Button
+                                        key={category}
+                                        variant={activeCategory === category ? 'black' : 'secondary'}
+                                        onClick={() => setActiveCategory(category)}
+                                        size="sm"
+                                    >
+                                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Menu Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredMenuItems.map(item => (
+                                <div key={item.id} className="border rounded-lg p-4 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
+                                    <img src={item.img} alt={item.name} className="w-24 h-24 object-cover mb-2 rounded" />
+                                    <h4 className="font-semibold">{item.name}</h4>
+                                    <p className="text-lg font-bold text-green-600 mb-1">₹{item.price}</p>
+                                    <p className="text-xs text-gray-500 mb-2">
+                                        {item.quantityAvailable} units available
+                                    </p>
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => addToOrder(item)}
+                                        disabled={item.quantityAvailable === 0}
+                                    >
+                                        {item.quantityAvailable === 0 ? 'Out of Stock' : 'Add to Order'}
+                                    </Button>
+                                </div>
+                            ))}
+                            {filteredMenuItems.length === 0 && (
+                                <p className="col-span-full text-center text-gray-500 py-8">No items found</p>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )
