@@ -98,7 +98,11 @@ const ManualOrder = () => {
     }
 
     const getTotalAmount = () => {
-        return selectedItems.reduce((total, item) => total + item.price * item.quantity, 0)
+        const total = selectedItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+    );
+        return Math.round(total * 100) / 100;
     }
 
     const handlePlaceOrder = () => {
@@ -213,7 +217,7 @@ const ManualOrder = () => {
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-medium text-sm">₹{item.price * item.quantity}</p>
+                                            <p className="font-medium text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -310,7 +314,7 @@ const ManualOrder = () => {
                                         <p className="text-xs text-gray-600">₹{item.price} each</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-medium text-sm">₹{item.price * item.quantity}</p>
+                                        <p className="font-medium text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
                                     </div>
                                 </div>
 
@@ -490,7 +494,7 @@ const ManualOrder = () => {
                         {selectedItems.map(item => (
                             <div key={item.id} className="flex justify-between py-1 text-sm">
                                 <span className="truncate pr-2">{item.name} × {item.quantity}</span>
-                                <span className="font-medium">₹{item.price * item.quantity}</span>
+                                <span className="font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
                             </div>
                         ))}
                         <hr className="my-2" />
