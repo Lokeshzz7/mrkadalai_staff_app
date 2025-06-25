@@ -4,6 +4,8 @@ import Card from '../components/ui/Card'
 import dayjs from 'dayjs'
 import Table from '../components/ui/Table'
 import Badge from '../components/ui/Badge'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
 
@@ -57,46 +59,45 @@ const OrderHistory = () => {
             setSelectedDate(dayjs().startOf('day')) 
         }
     }
+
     const downloadExcel = async () => {
         try {
             const response = await apiRequest(
                 `/staff/outlets/get-order-history/?outletId=${outletId}&date=${selectedDate.format('YYYY-MM-DD')}`
             )
-            
+
             const ordersData = response.orders || []
-            
+
             if (ordersData.length === 0) {
                 alert('No orders found for the selected date')
                 return
             }
-            const headers = ['Order ID', 'Customer Name', 'Order Type', 'Time', 'Items', 'Status']
-            const csvContent = [
-                headers.join(','),
+
+            const worksheetData = [
+                ['Order ID', 'Customer Name', 'Order Type', 'Time', 'Items', 'Status'],
                 ...ordersData.map(order => [
                     order.orderId,
-                    `"${order.customerName}"`,
+                    order.customerName,
                     order.orderType,
-                    `"${dayjs(order.createdAt).format('hh:mm A')}"`,
-                    `"${order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}"`,
+                    dayjs(order.createdAt).format('hh:mm A'),
+                    order.items.map(item => `${item.quantity}x ${item.name}`).join(', '),
                     order.status
-                ].join(','))
-            ].join('\n')
+                ])
+            ]
 
-            const blob = new Blob([csvContent], { 
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8;' 
-            })
-            const link = document.createElement('a')
-            const url = URL.createObjectURL(blob)
-            link.setAttribute('href', url)
-            link.setAttribute('download', `orders_${selectedDate.format('YYYY-MM-DD')}.xlsx`)
-            link.style.visibility = 'hidden'
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+            const workbook = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders')
+
+            const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+            const blob = new Blob([wbout], { type: 'application/octet-stream' })
+
+            saveAs(blob, `orders_${selectedDate.format('YYYY-MM-DD')}.xlsx`)
         } catch (err) {
             alert('Failed to download Excel: ' + err.message)
         }
     }
+
 
     // Transform orders data for table
     const orderTableData = orders.map(order => ([
