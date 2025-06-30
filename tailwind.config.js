@@ -5,8 +5,8 @@ module.exports = {
     extend: {
       colors: {
         bg: '#fefff9',
-        header: '#d9d9d9',
-        nav: '#f1f0f5',
+        header: '#DADADA',
+        nav: '#F0F5FA',
         theme: '#EBB22F',
         primary: '#5a595e',
         secondary: '#ffffff',
@@ -14,7 +14,6 @@ module.exports = {
         list: '#4d4d4d',
         table: "#646982",
         lables:'DADADA',
-        
       },
     },
   },
