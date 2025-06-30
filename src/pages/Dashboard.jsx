@@ -143,7 +143,7 @@ const Dashboard = () => {
         try {
             setSelectedOrder({ loading: true })
             const response = await apiRequest(`/staff/outlets/get-order/${outletId}/${cleanId}/`)
-            
+
             if (response.order) {
                 const order = response.order
                 setSelectedOrder({
@@ -211,7 +211,7 @@ const Dashboard = () => {
 
         const selectableItems = selectedOrder.items.filter(canSelectItem)
         const selectableItemIds = selectableItems.map(item => item.id)
-        
+
         if (selectedItems.length === selectableItemIds.length) {
             setSelectedItems([])
         } else {
@@ -238,7 +238,7 @@ const Dashboard = () => {
         try {
             setActionLoading(true)
             const orderId = selectedOrder.id.replace('#', '')
-            
+
             let status
             let orderItemId = null
 
@@ -281,21 +281,21 @@ const Dashboard = () => {
                 // Update the order status locally instead of calling searchOrder
                 setSelectedOrder(prevOrder => ({
                     ...prevOrder,
-                    status: modalAction === 'delivered' ? 'delivered' : 
-                           modalAction === 'cancel' ? 'cancelled' : prevOrder.status,
-                    items: modalAction === 'delivered' ? 
-                           prevOrder.items.map(item => ({ ...item, status: 'delivered' })) :
-                           modalAction === 'partially' && orderItemId ?
-                           prevOrder.items.map(item => 
-                               selectedItems.includes(item.id) ? 
-                               { ...item, status: 'delivered' } : item
-                           ) :
-                           prevOrder.items
+                    status: modalAction === 'delivered' ? 'delivered' :
+                        modalAction === 'cancel' ? 'cancelled' : prevOrder.status,
+                    items: modalAction === 'delivered' ?
+                        prevOrder.items.map(item => ({ ...item, status: 'delivered' })) :
+                        modalAction === 'partially' && orderItemId ?
+                            prevOrder.items.map(item =>
+                                selectedItems.includes(item.id) ?
+                                    { ...item, status: 'delivered' } : item
+                            ) :
+                            prevOrder.items
                 }))
-                
+
                 setSelectedItems([])
                 closeModal()
-                
+
                 // Refresh recent orders list in background
                 const fetchRecentOrders = async () => {
                     try {
@@ -330,7 +330,7 @@ const Dashboard = () => {
                         console.error('Error refreshing recent orders:', err)
                     }
                 }
-                
+
                 // Don't await this - let it run in background
                 fetchRecentOrders()
                 console.log('Order updated successfully:', response.message)
@@ -354,7 +354,7 @@ const Dashboard = () => {
                 const selectedItemNames = selectedOrder.items
                     .filter(item => selectedItems.includes(item.id))
                     .map(item => item.name)
-                
+
                 const remainingItemNames = selectedOrder.items
                     .filter(item => !selectedItems.includes(item.id) && !isItemDelivered(item.status))
                     .map(item => item.name)
@@ -426,233 +426,232 @@ const Dashboard = () => {
             </div>
 
             <div>
-                <Card>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Calculator Section */}
-                        <Card title='Order Look UP'>
-                            {/* Display Screen */}
-                            <div className="bg-gray-900 text-white p-4 rounded-lg mb-4">
-                                <input
-                                    type="text"
-                                    value={orderInput}
-                                    onChange={handleInputChange}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="Enter Order ID"
-                                    className="w-full bg-transparent text-2xl font-mono text-right border-none outline-none placeholder-gray-400"
-                                    maxLength={10}
-                                />
+                <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-6">
+                    {/* Calculator Section */}
+                    <Card title='Order Look UP' >
+                        {/* Display Screen */}
+                        <div className="bg-gray-900 text-white p-4 rounded-lg mb-4">
+                            <input
+                                type="text"
+                                value={orderInput}
+                                onChange={handleInputChange}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Enter Order ID"
+                                className="w-full bg-transparent text-2xl font-mono text-right border-none outline-none placeholder-gray-400"
+                                maxLength={10}
+                            />
+                        </div>
+
+                        {/* Calculator Buttons */}
+                        <div className="grid grid-cols-4 gap-2">
+                            {/* First Row */}
+                            <button
+                                onClick={() => handleButtonClick('clear')}
+                                className="bg-red-500 hover:bg-red-600 text-white p-3 rounded font-semibold"
+                            >
+                                Clear
+                            </button>
+                            <button
+                                onClick={() => handleButtonClick('backspace')}
+                                className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded font-semibold"
+                            >
+                                ⌫
+                            </button>
+                            <button
+                                onClick={() => handleButtonClick('#')}
+                                className="bg-gray-500 hover:bg-gray-600 text-white p-3 rounded font-semibold text-xl"
+                            >
+                                #
+                            </button>
+                            <button
+                                onClick={() => handleButtonClick('search')}
+                                className="bg-green-500 hover:bg-green-600 text-white p-3 rounded font-semibold row-span-2"
+                            >
+                                Search
+                            </button>
+
+                            {/* Number Buttons */}
+                            {[7, 8, 9].map(num => (
+                                <button
+                                    key={num}
+                                    onClick={() => handleButtonClick(num.toString())}
+                                    className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
+                                >
+                                    {num}
+                                </button>
+                            ))}
+
+                            {[4, 5, 6].map(num => (
+                                <button
+                                    key={num}
+                                    onClick={() => handleButtonClick(num.toString())}
+                                    className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
+                                >
+                                    {num}
+                                </button>
+                            ))}
+
+                            {[0, 2, 3].map(num => (
+                                <button
+                                    key={num}
+                                    onClick={() => handleButtonClick(num.toString())}
+                                    className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
+                                >
+                                    {num}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => handleButtonClick('1')}
+                                className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
+                            >
+                                1
+                            </button>
+                        </div>
+                    </Card>
+
+                    {/* Order Details Section */}
+                    <Card title='Order Details' >
+                        {!selectedOrder ? (
+                            <div >
+                                <div className="text-gray-400 text-4xl mb-2"></div>
+                                <p className="text-gray-500">Enter an Order ID to view details</p>
                             </div>
-
-                            {/* Calculator Buttons */}
-                            <div className="grid grid-cols-4 gap-2">
-                                {/* First Row */}
-                                <button
-                                    onClick={() => handleButtonClick('clear')}
-                                    className="bg-red-500 hover:bg-red-600 text-white p-3 rounded font-semibold"
-                                >
-                                    Clear
-                                </button>
-                                <button
-                                    onClick={() => handleButtonClick('backspace')}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded font-semibold"
-                                >
-                                    ⌫
-                                </button>
-                                <button
-                                    onClick={() => handleButtonClick('#')}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white p-3 rounded font-semibold text-xl"
-                                >
-                                    #
-                                </button>
-                                <button
-                                    onClick={() => handleButtonClick('search')}
-                                    className="bg-green-500 hover:bg-green-600 text-white p-3 rounded font-semibold row-span-2"
-                                >
-                                    Search
-                                </button>
-
-                                {/* Number Buttons */}
-                                {[7, 8, 9].map(num => (
-                                    <button
-                                        key={num}
-                                        onClick={() => handleButtonClick(num.toString())}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded font-semibold text-xl"
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
-
-                                {[4, 5, 6].map(num => (
-                                    <button
-                                        key={num}
-                                        onClick={() => handleButtonClick(num.toString())}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded font-semibold text-xl"
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
-
-                                {[1, 2, 3].map(num => (
-                                    <button
-                                        key={num}
-                                        onClick={() => handleButtonClick(num.toString())}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded font-semibold text-xl"
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={() => handleButtonClick('0')}
-                                    className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded font-semibold text-xl"
-                                >
-                                    0
-                                </button>
+                        ) : selectedOrder.loading ? (
+                            <div >
+                                <div className="text-blue-400 text-4xl mb-2">⏳</div>
+                                <p className="text-blue-600">Loading order details...</p>
                             </div>
-                        </Card>
-
-                        {/* Order Details Section */}
-                        <Card title='Order Details'>
-                            {!selectedOrder ? (
-                                <Card className="bg-gray-50 p-8 rounded-lg text-center">
-                                    <div className="text-gray-400 text-4xl mb-2">📋</div>
-                                    <p className="text-gray-500">Enter an Order ID to view details</p>
-                                </Card>
-                            ) : selectedOrder.loading ? (
-                                <Card className="bg-blue-50 p-8 rounded-lg text-center">
-                                    <div className="text-blue-400 text-4xl mb-2">⏳</div>
-                                    <p className="text-blue-600">Loading order details...</p>
-                                </Card>
-                            ) : selectedOrder.notFound ? (
-                                <div className="bg-red-50 border border-red-200 p-6 rounded-lg text-center">
-                                    <div className="text-red-400 text-4xl mb-2">❌</div>
-                                    <p className="text-red-600 font-semibold">Order Not Found</p>
-                                    <p className="text-red-500 text-sm mt-1">Please check the Order ID and try again</p>
+                        ) : selectedOrder.notFound ? (
+                            <div className="bg-red-50 border border-red-200 p-6 rounded-lg text-center">
+                                <div className="text-red-400 text-4xl mb-2">❌</div>
+                                <p className="text-red-600 font-semibold">Order Not Found</p>
+                                <p className="text-red-500 text-sm mt-1">Please check the Order ID and try again</p>
+                            </div>
+                        ) : (
+                            <Card className="overflow-hidden">
+                                {/* Order Header */}
+                                <div className="bg-gray-50 p-4 border-b -m-6 mb-6">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h4 className="font-semibold text-lg">{selectedOrder.id}</h4>
+                                            <p className="text-gray-600">{selectedOrder.customer}</p>
+                                            {selectedOrder.outletName && (
+                                                <p className="text-sm text-blue-500">Outlet: {selectedOrder.outletName}</p>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <Badge variant={getStatusVariant(selectedOrder.status)}>
+                                                {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                                            </Badge>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                {new Date(selectedOrder.createdAt).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                            ) : (
-                                <Card className="overflow-hidden">
-                                    {/* Order Header */}
-                                    <div className="bg-gray-50 p-4 border-b -m-6 mb-6">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h4 className="font-semibold text-lg">{selectedOrder.id}</h4>
-                                                <p className="text-gray-600">{selectedOrder.customer}</p>
-                                                {selectedOrder.outletName && (
-                                                    <p className="text-sm text-blue-500">Outlet: {selectedOrder.outletName}</p>
-                                                )}
-                                            </div>
-                                            <div className="text-right">
-                                                <Badge variant={getStatusVariant(selectedOrder.status)}>
-                                                    {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
-                                                </Badge>
-                                                <p className="text-sm text-gray-500 mt-1">
-                                                    {new Date(selectedOrder.createdAt).toLocaleString()}
-                                                </p>
-                                            </div>
+
+                                {/* Item Selection Controls */}
+                                {!isOrderCompleted() && getSelectableItemsCount() > 0 && (
+                                    <div className="mb-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h5 className="font-medium">Items Ordered:</h5>
+                                            <button
+                                                onClick={handleSelectAll}
+                                                className="text-sm text-blue-600 hover:text-blue-800"
+                                            >
+                                                {selectedItems.length === getSelectableItemsCount() ? 'Deselect All' : 'Select All'}
+                                            </button>
                                         </div>
                                     </div>
+                                )}
 
-                                    {/* Item Selection Controls */}
-                                    {!isOrderCompleted() && getSelectableItemsCount() > 0 && (
-                                        <div className="mb-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h5 className="font-medium">Items Ordered:</h5>
-                                                <button
-                                                    onClick={handleSelectAll}
-                                                    className="text-sm text-blue-600 hover:text-blue-800"
-                                                >
-                                                    {selectedItems.length === getSelectableItemsCount() ? 'Deselect All' : 'Select All'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                {/* Show completed order message */}
+                                {isOrderCompleted() && (
+                                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                                        <div className="text-green-500 text-3xl mb-2">✅</div>
+                                        <p className="text-green-700 font-medium text-lg">
+                                            This order has been {selectedOrder.status === 'delivered' ? 'delivered' : selectedOrder.status === 'cancelled' ? 'cancelled' : 'completed'} successfully!
+                                        </p>
+                                        <p className="text-green-600 text-sm mt-1">
+                                            {selectedOrder.status === 'delivered' ? 'All items have been delivered to the customer.' :
+                                                selectedOrder.status === 'cancelled' ? 'This order has been cancelled.' :
+                                                    'This order has been completed.'}
+                                        </p>
+                                    </div>
+                                )}
 
-                                    {/* Show completed order message */}
-                                    {isOrderCompleted() && (
-                                        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                                            <div className="text-green-500 text-3xl mb-2">✅</div>
-                                            <p className="text-green-700 font-medium text-lg">
-                                                This order has been {selectedOrder.status === 'delivered' ? 'delivered' : selectedOrder.status === 'cancelled' ? 'cancelled' : 'completed'} successfully!
-                                            </p>
-                                            <p className="text-green-600 text-sm mt-1">
-                                                {selectedOrder.status === 'delivered' ? 'All items have been delivered to the customer.' : 
-                                                 selectedOrder.status === 'cancelled' ? 'This order has been cancelled.' : 
-                                                 'This order has been completed.'}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Order Items with Checkboxes */}
-                                    <div className="space-y-2 mb-4">
-                                        {selectedOrder.items.map((item, index) => (
-                                            <div key={index} className="flex items-center space-x-3 py-2 border-b border-gray-100 last:border-b-0">
-                                                {!isOrderCompleted() && (
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedItems.includes(item.id)}
-                                                        onChange={() => handleItemSelection(item.id)}
-                                                        disabled={!canSelectItem(item)}
-                                                        className={`w-4 h-4 text-blue-600 rounded ${!canSelectItem(item) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    />
-                                                )}
-                                                <div className="flex-1 flex justify-between items-center">
-                                                    <div>
-                                                        <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
-                                                            {item.name}
-                                                        </span>
-                                                        <span className="text-gray-500 ml-2">×{item.quantity}</span>
-                                                        {item.status && (
-                                                            <Badge variant={getStatusVariant(item.status.toLowerCase())} className="ml-2 text-xs">
-                                                                {item.status}
-                                                            </Badge>
-                                                        )}
-                                                        {isItemDelivered(item.status) && (
-                                                            <span className="ml-2 text-green-600 text-xs">✓</span>
-                                                        )}
-                                                    </div>
+                                {/* Order Items with Checkboxes */}
+                                <div className="space-y-2 mb-4">
+                                    {selectedOrder.items.map((item, index) => (
+                                        <div key={index} className="flex items-center space-x-3 py-2 border-b border-gray-100 last:border-b-0">
+                                            {!isOrderCompleted() && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedItems.includes(item.id)}
+                                                    onChange={() => handleItemSelection(item.id)}
+                                                    disabled={!canSelectItem(item)}
+                                                    className={`w-4 h-4 text-blue-600 rounded ${!canSelectItem(item) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                />
+                                            )}
+                                            <div className="flex-1 flex justify-between items-center">
+                                                <div>
                                                     <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
-                                                        ₹ {item.price.toFixed(2)}
+                                                        {item.name}
                                                     </span>
+                                                    <span className="text-gray-500 ml-2">×{item.quantity}</span>
+                                                    {item.status && (
+                                                        <Badge variant={getStatusVariant(item.status.toLowerCase())} className="ml-2 text-xs">
+                                                            {item.status}
+                                                        </Badge>
+                                                    )}
+                                                    {isItemDelivered(item.status) && (
+                                                        <span className="ml-2 text-green-600 text-xs">✓</span>
+                                                    )}
                                                 </div>
+                                                <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
+                                                    ₹ {item.price.toFixed(2)}
+                                                </span>
                                             </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Total - Moved above action buttons */}
-                                    <div className="flex justify-between items-center py-3 border-t border-gray-200 mb-4">
-                                        <span className="font-semibold text-lg">Total:</span>
-                                        <span className="font-bold text-lg text-green-600">₹ {selectedOrder.total.toFixed(2)}</span>
-                                    </div>
-
-                                    {/* Action Buttons - Only show if order is not completed */}
-                                    {!isOrderCompleted() && (
-                                        <div className="flex space-x-2">
-                                            <Button
-                                                onClick={() => openModal('delivered')}
-                                                disabled={selectedItems.length === 0}
-                                                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                            >
-                                                Mark Delivered
-                                            </Button>
-                                            <Button
-                                                onClick={() => openModal('partially')}
-                                                disabled={selectedItems.length === 0 ||getRemainingUndeliveredItemsCount() <= 1}
-                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                            >
-                                                Partially Delivered
-                                            </Button>
-                                            <Button
-                                                onClick={() => openModal('cancel')}
-                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                                            >
-                                                Cancel Order
-                                            </Button>
                                         </div>
-                                    )}
-                                </Card>
-                            )}
-                        </Card>
-                    </div>
-                </Card>
+                                    ))}
+                                </div>
+
+                                {/* Total - Moved above action buttons */}
+                                <div className="flex justify-between items-center py-3 border-t border-gray-200 mb-4">
+                                    <span className="font-semibold text-lg">Total:</span>
+                                    <span className="font-bold text-lg text-green-600">₹ {selectedOrder.total.toFixed(2)}</span>
+                                </div>
+
+                                {/* Action Buttons - Only show if order is not completed */}
+                                {!isOrderCompleted() && (
+                                    <div className="flex space-x-2">
+                                        <Button
+                                            onClick={() => openModal('delivered')}
+                                            disabled={selectedItems.length === 0}
+                                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                        >
+                                            Mark Delivered
+                                        </Button>
+                                        <Button
+                                            onClick={() => openModal('partially')}
+                                            disabled={selectedItems.length === 0 || getRemainingUndeliveredItemsCount() <= 1}
+                                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                        >
+                                            Partially Delivered
+                                        </Button>
+                                        <Button
+                                            onClick={() => openModal('cancel')}
+                                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+                                        >
+                                            Cancel Order
+                                        </Button>
+                                    </div>
+                                )}
+                            </Card>
+                        )}
+                    </Card>
+                </div>
+
             </div>
 
             {/* Recent Orders Table */}
