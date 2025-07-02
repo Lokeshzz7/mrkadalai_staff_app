@@ -18,15 +18,53 @@ const Dashboard = () => {
     const [showModal, setShowModal] = useState(false)
     const [modalAction, setModalAction] = useState('')
     const [actionLoading, setActionLoading] = useState(false)
+    
+    // New state for home data
+    const [homeData, setHomeData] = useState({
+        totalRevenue: 0,
+        appOrders: 0,
+        manualOrders: 0,
+        peakSlot: null,
+        bestSellerProduct: null,
+        totalRechargedAmount: 0,
+        lowStockProducts: []
+    })
+    const [homeDataLoading, setHomeDataLoading] = useState(true)
 
     const { outletId } = useOutletDetails()
 
-    // ! Fake Data for low stock (should be replaced with API)
-    const lowStockItems = [
-        ['Tomatoes', '5 kg', '10 kg', <Badge variant="danger">Low</Badge>],
-        ['Cheese', '2 kg', '8 kg', <Badge variant="danger">Critical</Badge>],
-        ['Bread', '15 units', '20 units', <Badge variant="warning">Low</Badge>]
-    ]
+    // Fetch home data from API
+    useEffect(() => {
+        const fetchHomeData = async () => {
+            if (!outletId) {
+                setHomeDataLoading(false)
+                return
+            }
+
+            try {
+                setHomeDataLoading(true)
+                const response = await apiRequest('/staff/outlets/get-home-data/')
+                
+                if (response) {
+                    setHomeData({
+                        totalRevenue: response.totalRevenue || 0,
+                        appOrders: response.appOrders || 0,
+                        manualOrders: response.manualOrders || 0,
+                        peakSlot: response.peakSlot || null,
+                        bestSellerProduct: response.bestSellerProduct || null,
+                        totalRechargedAmount: response.totalRechargedAmount || 0,
+                        lowStockProducts: response.lowStockProducts || []
+                    })
+                }
+            } catch (err) {
+                console.error('Error fetching home data:', err)
+            } finally {
+                setHomeDataLoading(false)
+            }
+        }
+
+        fetchHomeData()
+    }, [outletId])
 
     // Fetch recent orders from API
     useEffect(() => {
@@ -378,10 +416,29 @@ const Dashboard = () => {
         return selectedOrder.items.filter(item => !isItemDelivered(item.status)).length
     }
 
-
     const getSelectableItemsCount = () => {
         if (!selectedOrder) return 0
         return selectedOrder.items.filter(canSelectItem).length
+    }
+
+    // Helper function to format currency
+    const formatCurrency = (amount) => {
+        if (amount === 0 || amount === null || amount === undefined) return '0'
+        return amount.toLocaleString('en-IN')
+    }
+
+    const DeliverySlot = {
+        SLOT_11_12: '11:00-12:00',
+        SLOT_12_13: '12:00-13:00',
+        SLOT_13_14: '13:00-14:00',
+        SLOT_14_15: '14:00-15:00',
+        SLOT_15_16: '15:00-16:00',
+        SLOT_16_17: '16:00-17:00',
+    };
+
+    const formatPeakSlot = (slot) => {
+        if (!slot) return 'N/A'
+        return DeliverySlot[slot] || 'Invalid Slot';
     }
 
     return (
@@ -389,39 +446,63 @@ const Dashboard = () => {
             <div>
                 <h2 className="text-xl font-semibold text-gray-800">Overview</h2>
             </div>
+            
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 <Card Black className="text-center">
-                    <p className="text-gray-600">Today's Sales</p>
-                    <h2 className="text-2xl font-bold text-blue-600">45</h2>
+                    <p className="text-gray-600">Total Revenue</p>
+                    <h2 className="text-2xl font-bold text-blue-600">
+                        {homeDataLoading ? '...' : `₹${formatCurrency(homeData.totalRevenue)}`}
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">Manual Orders</p>
-                    <h2 className="text-2xl font-bold text-green-600">340</h2>
+                    <h2 className="text-2xl font-bold text-green-600">
+                        {homeDataLoading ? '...' : homeData.manualOrders}
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">App Orders</p>
-                    <h2 className="text-2xl font-bold text-orange-600">23</h2>
+                    <h2 className="text-2xl font-bold text-orange-600">
+                        {homeDataLoading ? '...' : homeData.appOrders}
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">Wallet Recharges</p>
-                    <h2 className="text-2xl font-bold text-yellow-600">12</h2>
+                    <h2 className="text-2xl font-bold text-yellow-600">
+                        {homeDataLoading ? '...' : `₹${formatCurrency(homeData.totalRechargedAmount)}`}
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">Low Stock Items</p>
-                    <h2 className="text-2xl font-bold text-red-600">3</h2>
+                    <h2 className="text-2xl font-bold text-red-600">
+                        {homeDataLoading ? '...' : homeData.lowStockProducts.length}
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">Refund Requests</p>
-                    <h2 className="text-2xl font-bold text-purple-600">64</h2>
+                    <h2 className="text-2xl font-bold text-purple-600">
+                        N/A
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">Best Seller</p>
-                    <h2 className="text-2xl font-bold text-pink-600">Biryani</h2>
+                    <h2 className="text-2xl font-bold text-pink-600">
+                        {homeDataLoading ? '...' : (homeData.bestSellerProduct?.name || 'N/A')}
+                    </h2>
                 </Card>
+                
                 <Card Black className="text-center">
                     <p className="text-gray-600">Peak Order Time</p>
-                    <h2 className="text-2xl font-bold text-cyan-600">11 am - 1 pm</h2>
+                    <h2 className="text-2xl font-bold text-cyan-600">
+                        {homeDataLoading ? '...' : formatPeakSlot(homeData.peakSlot)}
+                    </h2>
                 </Card>
             </div>
 
@@ -512,12 +593,12 @@ const Dashboard = () => {
                     {/* Order Details Section */}
                     <Card title='Order Details' >
                         {!selectedOrder ? (
-                            <div >
+                            <div>
                                 <div className="text-gray-400 text-4xl mb-2"></div>
                                 <p className="text-gray-500">Enter an Order ID to view details</p>
                             </div>
                         ) : selectedOrder.loading ? (
-                            <div >
+                            <div>
                                 <div className="text-blue-400 text-4xl mb-2">⏳</div>
                                 <p className="text-blue-600">Loading order details...</p>
                             </div>
@@ -651,7 +732,6 @@ const Dashboard = () => {
                         )}
                     </Card>
                 </div>
-
             </div>
 
             {/* Recent Orders Table */}
