@@ -10,8 +10,9 @@ const SignUp = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        phone:'',
         password: '',
-        confirmPassword: '',
+        retypePassword: '',
     });
     const [formErrors, setFormErrors] = useState({});
 
@@ -35,7 +36,7 @@ const SignUp = () => {
         if (error) {
             const timer = setTimeout(() => {
                 if (clearError) clearError();
-            }, 5000);
+            }, 10000);
             return () => clearTimeout(timer);
         }
     }, [error, clearError]);
@@ -67,16 +68,22 @@ const SignUp = () => {
             errors.email = 'Email is invalid';
         }
 
+        if (!formData.phone.trim()) {
+            errors.phone = 'Phone number is required';
+        } else if (!/^\+?[0-9]{7,15}$/.test(formData.phone)) {
+            errors.phone = 'Phone number is invalid';
+        }
+
         if (!formData.password) {
             errors.password = 'Password is required';
         } else if (formData.password.length < 6) {
             errors.password = 'Password must be at least 6 characters';
         }
 
-        if (!formData.confirmPassword) {
-            errors.confirmPassword = 'Please confirm your password';
-        } else if (formData.password !== formData.confirmPassword) {
-            errors.confirmPassword = 'Passwords do not match';
+        if (!formData.retypePassword) {
+            errors.retypePassword = 'Please confirm your password';
+        } else if (formData.password !== formData.retypePassword) {
+            errors.retypePassword = 'Passwords do not match';
         }
 
         setFormErrors(errors);
@@ -89,9 +96,9 @@ const SignUp = () => {
         if (!validateForm()) return;
 
         try {
-            const { confirmPassword, ...signupData } = formData;
-            await signUp(signupData);
+            await signUp(formData);
         } catch (err) {
+            console.error('Staff signup error:', err.message);
         }
     };
 
@@ -146,6 +153,18 @@ const SignUp = () => {
                         />
 
                         <Input
+                            label="Phone Number"
+                            name="phone"
+                            type="tel"
+                            autoComplete="tel"
+                            required
+                            value={formData.phone}
+                            onChange={handleChange}
+                            error={formErrors.phone}
+                            placeholder="Enter your phone number"
+                        />
+
+                        <Input
                             label="Password"
                             name="password"
                             type="password"
@@ -159,13 +178,13 @@ const SignUp = () => {
 
                         <Input
                             label="Confirm Password"
-                            name="confirmPassword"
+                            name="retypePassword"
                             type="password"
                             autoComplete="new-password"
                             required
-                            value={formData.confirmPassword}
+                            value={formData.retypePassword}
                             onChange={handleChange}
-                            error={formErrors.confirmPassword}
+                            error={formErrors.retypePassword}
                             placeholder="Confirm your password"
                         />
 

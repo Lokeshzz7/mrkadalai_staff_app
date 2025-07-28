@@ -10,7 +10,7 @@ export const ROUTES = {
 };
 
 export const API_ENDPOINTS = {
-    SIGN_UP: '/auth/signup',
-    SIGN_IN: '/auth/staffsignin',
+    SIGN_UP: '/auth/staff-signup',
+    SIGN_IN: '/auth/staff-signin',
     SIGN_OUT: '/auth/signout',
 };
