@@ -5,6 +5,8 @@ import Input from '../../components/ui/Input.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Card from '../../components/ui/Card.jsx';
 import { ROUTES } from '../../utils/constants.js';
+import toast from 'react-hot-toast';
+
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
@@ -98,6 +100,7 @@ const SignUp = () => {
         try {
             const response = await signUp(formData);
             if (response) {
+                toast.success('Staff Successfully signed UP');
                 navigate(ROUTES.SIGN_IN, { replace: true });
             }
         } catch (err) {

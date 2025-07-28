@@ -18,11 +18,14 @@ import Wallet from './pages/Wallet';
 import Reports from './pages/Reports';
 import OrderHistory from './pages/OrderHistory.jsx';
 import Settings from './pages/Settings.jsx';
+import { Toaster } from 'react-hot-toast';
+
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <Toaster position="bottom-right" reverseOrder={false} />
         <Routes>
           {/* Public routes - these should render without Layout */}
           <Route path="/signin" element={<SignIn />} />
