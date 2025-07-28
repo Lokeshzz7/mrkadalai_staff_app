@@ -165,7 +165,7 @@ export const AuthProvider = ({ children }) => {
                 storeOutletDetails(response.user.outlet);
             }
 
-            dispatch({ type: 'LOGIN_SUCCESS', payload: loginData });
+            // dispatch({ type: 'LOGIN_SUCCESS', payload: loginData });
             return response;
         } catch (error) {
             dispatch({ type: 'ERROR', payload: error.message });

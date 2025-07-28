@@ -10,7 +10,7 @@ const SignUp = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        phone:'',
+        phone: '',
         password: '',
         retypePassword: '',
     });
@@ -96,7 +96,10 @@ const SignUp = () => {
         if (!validateForm()) return;
 
         try {
-            await signUp(formData);
+            const response = await signUp(formData);
+            if (response) {
+                navigate(ROUTES.SIGN_IN, { replace: true });
+            }
         } catch (err) {
             console.error('Staff signup error:', err.message);
         }
