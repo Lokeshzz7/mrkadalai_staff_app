@@ -6,6 +6,8 @@ import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
+import { toast } from 'react-hot-toast';
+
 
 const ManualOrder = () => {
     const [selectedItems, setSelectedItems] = useState([])
@@ -71,7 +73,7 @@ const ManualOrder = () => {
                     i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
                 ))
             } else {
-                alert(`Only ${item.quantityAvailable} units available for ${item.name}`)
+                toast.success(`Only ${item.quantityAvailable} units available for ${item.name}`)
             }
         } else {
             setSelectedItems([...selectedItems, { ...item, quantity: 1 }])
@@ -88,7 +90,7 @@ const ManualOrder = () => {
         } else {
             const item = menuItems.find(i => i.id === itemId)
             if (newQuantity > item.quantityAvailable) {
-                alert(`Only ${item.quantityAvailable} units available for ${item.name}`)
+                toast.success(`Only ${item.quantityAvailable} units available for ${item.name}`)
                 return
             }
             setSelectedItems(selectedItems.map(item =>
@@ -153,7 +155,7 @@ const ManualOrder = () => {
             })
 
             // Success
-            alert(`Payment successful! Order ${response.order.id} has been placed.`)
+            toast.success(`Payment successful! Order ${response.order.id} has been placed.`)
             
             // Reset everything
             setSelectedItems([])
@@ -176,7 +178,7 @@ const ManualOrder = () => {
 
         } catch (error) {
             console.error('Error placing order:', error)
-            alert(`Failed to place order: ${error.message}`)
+            toast.error(`Failed to place order: ${error.message}`)
         } finally {
             setIsProcessingPayment(false)
         }

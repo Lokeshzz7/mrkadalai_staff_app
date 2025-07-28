@@ -8,6 +8,8 @@ import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
+import { toast } from 'react-hot-toast';
+
 
 const OrderHistory = () => {
     const [baseDate, setBaseDate] = useState(dayjs().startOf('day'))
@@ -69,7 +71,7 @@ const OrderHistory = () => {
             const ordersData = response.orders || []
 
             if (ordersData.length === 0) {
-                alert('No orders found for the selected date')
+                toast.error('No orders found for the selected date')
                 return
             }
 
@@ -94,7 +96,7 @@ const OrderHistory = () => {
 
             saveAs(blob, `orders_${selectedDate.format('YYYY-MM-DD')}.xlsx`)
         } catch (err) {
-            alert('Failed to download Excel: ' + err.message)
+            toast.error('Failed to download Excel: ' + err.message)
         }
     }
 

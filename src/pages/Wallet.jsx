@@ -6,6 +6,8 @@ import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
+import { toast } from 'react-hot-toast';
+
 
 const Wallet = () => {
     const [showRechargeModal, setShowRechargeModal] = useState(false)
@@ -83,7 +85,7 @@ const Wallet = () => {
             fetchRechargeHistory()
             
             // Show success message (you can replace this with a toast notification)
-            alert('Recharge processed successfully!')
+            toast.success('Recharge processed successfully!')
             
         } catch (error) {
             console.error('Error processing recharge:', error)
