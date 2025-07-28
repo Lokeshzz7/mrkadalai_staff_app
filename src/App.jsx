@@ -25,7 +25,11 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Toaster position="bottom-right" reverseOrder={false} />
+        <Toaster position="bottom-right" reverseOrder={false} toastOptions={{style:{
+          fontSize:'20px',
+          padding: '18px 28px',
+          minWidth:'320px'
+        }}} />
         <Routes>
           {/* Public routes - these should render without Layout */}
           <Route path="/signin" element={<SignIn />} />
