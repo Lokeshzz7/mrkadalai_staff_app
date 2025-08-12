@@ -8,34 +8,30 @@ import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
-import { toast } from 'react-hot-toast';
-
+import { toast } from 'react-hot-toast'
 
 const OrderHistory = () => {
-    const [baseDate, setBaseDate] = useState(dayjs().startOf('day'))
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf('day'))
     const [orders, setOrders] = useState([])
+    const [availableDates, setAvailableDates] = useState([])
     const [loading, setLoading] = useState(false)
+    const [datesLoading, setDatesLoading] = useState(false)
     const [error, setError] = useState(null)
+    const [datesError, setDatesError] = useState(null)
+    const [datePickerValue, setDatePickerValue] = useState('')
 
-    // Calculate the 4 dates based on baseDate (if selected) or today
-    const referenceDate = baseDate || dayjs().startOf('day')
-    const yesterday = referenceDate.subtract(1, 'day')
-    const today = referenceDate
-    const tomorrow = referenceDate.add(1, 'day')
-    const dayAfterTomorrow = referenceDate.add(2, 'day')
+    const { outletId } = useOutletDetails()
 
-    const {outletId} = useOutletDetails();
-
+    // Function to fetch orders for a specific date
     const fetchOrders = async (date) => {
         setLoading(true)
         setError(null)
-        
+
         try {
             const response = await apiRequest(
                 `/staff/outlets/get-order-history/?outletId=${outletId}&date=${date.format('YYYY-MM-DD')}`
             )
-            
+
             setOrders(response.orders || [])
         } catch (err) {
             setError('Failed to fetch orders: ' + err.message)
@@ -44,21 +40,48 @@ const OrderHistory = () => {
             setLoading(false)
         }
     }
+
+    // Function to fetch available dates from the new endpoint
+    const fetchAvailableDates = async () => {
+        if (!outletId) return
+
+        setDatesLoading(true)
+        setDatesError(null)
+
+        try {
+            const response = await apiRequest(`/staff/outlets/get-orderdates/${outletId}`)
+            const fetchedDates = response.data.map(dateObj => dayjs(dateObj.date))
+            setAvailableDates(fetchedDates)
+
+            if (fetchedDates.length > 0 && !fetchedDates.some(date => date.isSame(selectedDate, 'day'))) {
+                setSelectedDate(fetchedDates[0])
+            }
+        } catch (err) {
+            setDatesError('Failed to fetch available dates: ' + err.message)
+            setAvailableDates([])
+        } finally {
+            setDatesLoading(false)
+        }
+    }
+
+    // Effect to fetch orders when selectedDate or outletId changes
     useEffect(() => {
         if (selectedDate && outletId) {
             fetchOrders(selectedDate)
         }
     }, [selectedDate, outletId])
 
+    // Effect to fetch available dates on component mount or when outletId changes
+    useEffect(() => {
+        fetchAvailableDates()
+    }, [outletId])
+
     const handleDatePickerChange = (event) => {
         const selectedDateString = event.target.value
+        setDatePickerValue(selectedDateString)
         if (selectedDateString) {
-            const newBaseDate = dayjs(selectedDateString).startOf('day')
-            setBaseDate(newBaseDate)
-            setSelectedDate(newBaseDate)
-        } else {
-            setBaseDate(null)
-            setSelectedDate(dayjs().startOf('day')) 
+            const newDate = dayjs(selectedDateString).startOf('day')
+            setSelectedDate(newDate)
         }
     }
 
@@ -100,7 +123,6 @@ const OrderHistory = () => {
         }
     }
 
-
     // Transform orders data for table
     const orderTableData = orders.map(order => ([
         order.orderId,
@@ -121,46 +143,32 @@ const OrderHistory = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold">Order History</h1>
 
-            {/* Date Picker */}
-            <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Select Date:</label>
-                <input
-                    type="date"
-                    value={baseDate ? baseDate.format('YYYY-MM-DD') : ''}
-                    onChange={handleDatePickerChange}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-
             <div className="flex justify-between items-center flex-wrap gap-2">
-                <div className="flex gap-2 flex-wrap">
-                    <Button
-                        variant={selectedDate.isSame(yesterday, 'day') ? 'black' : 'secondary'}
-                        onClick={() => setSelectedDate(yesterday)}
-                    >
-                        {yesterday.format('DD MMM')}
-                    </Button>
-                    <Button
-                        variant={selectedDate.isSame(today, 'day') ? 'black' : 'secondary'}
-                        onClick={() => setSelectedDate(today)}
-                    >
-                        {today.format('DD MMM')}
-                    </Button>
-                    <Button
-                        variant={selectedDate.isSame(tomorrow, 'day') ? 'black' : 'secondary'}
-                        onClick={() => setSelectedDate(tomorrow)}
-                    >
-                        {tomorrow.format('DD MMM')}
-                    </Button>
-                    <Button
-                        variant={selectedDate.isSame(dayAfterTomorrow, 'day') ? 'black' : 'secondary'}
-                        onClick={() => setSelectedDate(dayAfterTomorrow)}
-                    >
-                        {dayAfterTomorrow.format('DD MMM')}
-                    </Button>
+                <div className="flex-1 min-w-0">
+                    <div className="flex overflow-x-auto whitespace-nowrap gap-2 pb-2 scrollbar-hide">
+                        {datesLoading && <p>Loading dates...</p>}
+                        {datesError && <p className="text-red-600">{datesError}</p>}
+                        {!datesLoading && !datesError && availableDates.map(date => (
+                            <Button
+                                key={date.toISOString()}
+                                variant={selectedDate.isSame(date, 'day') ? 'black' : 'secondary'}
+                                onClick={() => setSelectedDate(date)}
+                                className="flex-shrink-0"
+                            >
+                                {date.format('DD MMM')}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-shrink-0">
+                    <label className="text-sm font-medium text-gray-700">Select Date:</label>
+                    <input
+                        type="date"
+                        value={datePickerValue || (selectedDate ? selectedDate.format('YYYY-MM-DD') : '')}
+                        onChange={handleDatePickerChange}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <Button
                         variant="secondary"
                         onClick={downloadExcel}
@@ -178,13 +186,13 @@ const OrderHistory = () => {
                             <p>Loading orders...</p>
                         </div>
                     )}
-                    
+
                     {error && (
                         <div className="text-center py-4 text-red-600">
                             <p>{error}</p>
                         </div>
                     )}
-                    
+
                     {!loading && !error && (
                         <Table
                             headers={['Order ID', 'Customer Name', 'Order Type', 'Time', 'Items', 'Status', 'Action']}
