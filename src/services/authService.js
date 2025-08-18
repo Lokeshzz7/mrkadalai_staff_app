@@ -10,16 +10,28 @@ export const authService = {
     },
 
     signIn: async (credentials) => {
-        return await apiRequest(API_ENDPOINTS.SIGN_IN, {
+        const response = await apiRequest(API_ENDPOINTS.SIGN_IN, {
             method: 'POST',
             body: credentials,
         });
+        
+        // Extract token from response and store in localStorage
+        if (response && response.token) {
+            localStorage.setItem('token', response.token);
+        }
+        
+        return response;
     },
 
     signOut: async () => {
-        return await apiRequest(API_ENDPOINTS.SIGN_OUT, {
+        const response = await apiRequest(API_ENDPOINTS.SIGN_OUT, {
             method: 'POST',
         });
+        
+        // Clear token from localStorage
+        localStorage.removeItem('token');
+        
+        return response;
     },
 
     checkAuth: async () => {

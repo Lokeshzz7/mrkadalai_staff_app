@@ -1,11 +1,13 @@
-const API_BASE_URL = 'http://localhost:5500/api';
+const API_BASE_URL = 'http://51.21.198.214:5500/api';
 
 export const apiRequest = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    const token = localStorage.getItem("token");
     const config = {
         headers: {
             'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
             ...options.headers,
         },
         credentials: 'include',
