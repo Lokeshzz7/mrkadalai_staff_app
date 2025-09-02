@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Marquee from 'react-fast-marquee';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import { apiRequest } from '../utils/api';
@@ -16,7 +15,7 @@ const Notifications = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
-  
+
   // New states for orders functionality
   const [allOrders, setAllOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -25,7 +24,7 @@ const Notifications = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderModalAction, setOrderModalAction] = useState('');
   const [orderActionLoading, setOrderActionLoading] = useState(false);
-  
+
   const navigate = useNavigate();
 
   // Get outlet ID from utility hook
@@ -150,13 +149,13 @@ const Notifications = () => {
           addedQuantity: parseInt(quantity)
         }
       });
-      
+
       console.log('Restock response:', response);
-      
+
       handleCloseModal();
       await fetchStocks();
       console.log('Stock restocked successfully');
-      
+
     } catch (err) {
       setError(err.message || 'Error restocking item');
       console.error('Error restocking:', err);
@@ -215,9 +214,9 @@ const Notifications = () => {
 
       if (response.message) {
         // Update the order status locally (keep all orders in queue)
-        setAllOrders(prevOrders => 
-          prevOrders.map(order => 
-            order.orderId === selectedOrder.orderId 
+        setAllOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.orderId === selectedOrder.orderId
               ? { ...order, status: orderModalAction === 'delivered' ? 'delivered' : 'cancelled' }
               : order
           )
@@ -293,7 +292,7 @@ const Notifications = () => {
 
   const filterStockByCategory = () => {
     if (loading) return [];
-    
+
     // Only return food items
     return stockData.filter(item => {
       return ['Meals', 'Starters', 'Desserts', 'Beverages'].includes(item.category);
@@ -328,6 +327,14 @@ const Notifications = () => {
     });
   };
 
+  const getHeadingText = () => {
+    if (activeTab === 'orders') {
+      return 'App Orders List';
+    } else {
+      return 'Inventory';
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       {/* Error Display */}
@@ -337,41 +344,30 @@ const Notifications = () => {
         </div>
       )}
 
-      {/* Heading */}
-      <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
-
-      {/* Marquee Section */}
-      <div className="w-full bg-white rounded-lg shadow-inner border border-gray-300 overflow-hidden">
-        <Marquee gradient={false} speed={50} pauseOnHover={true}>
-          <div className="flex gap-6 px-4 py-2">
-            <span className="text-sm text-gray-700">New order received from Table A1</span>
-            <span className="text-sm text-gray-700">Inventory updated: Tomatoes low stock</span>
-            <span className="text-sm text-gray-700">Order #12345 delivered successfully</span>
-          </div>
-        </Marquee>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex justify-end space-x-4">
-        <Button
-          variant={activeTab === 'orders' ? 'black' : 'secondary'}
-          onClick={() => setActiveTab('orders')}
-        >
-          Orders
-        </Button>
-        <Button
-          variant={activeTab === 'inventory' ? 'black' : 'secondary'}
-          onClick={() => setActiveTab('inventory')}
-        >
-          Inventory
-        </Button>
+      {/* Heading and Tabs */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">{getHeadingText()}</h2>
+        <div className="flex space-x-4">
+          <Button
+            variant={activeTab === 'orders' ? 'black' : 'secondary'}
+            onClick={() => setActiveTab('orders')}
+          >
+            Orders
+          </Button>
+          <Button
+            variant={activeTab === 'inventory' ? 'black' : 'secondary'}
+            onClick={() => setActiveTab('inventory')}
+          >
+            Inventory
+          </Button>
+        </div>
       </div>
 
       {/* Orders Section */}
       {activeTab === 'orders' && (
         <div className="space-y-6">
           {/* Orders List Heading */}
-          <h3 className="text-xl font-semibold text-gray-800">App Orders List</h3>
+          {/* This heading is now managed by getHeadingText and combined with buttons */}
 
           {/* Loading State */}
           {ordersLoading && (
@@ -406,8 +402,8 @@ const Notifications = () => {
 
           {/* Orders Information */}
           {!ordersLoading && allOrders.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[500px] overflow-y-auto" 
-                 style={{ scrollBehavior: 'smooth' }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[500px] overflow-y-auto"
+              style={{ scrollBehavior: 'smooth' }}>
               {getSortedOrders().map((order, index) => (
                 <div
                   key={`${order.id}-${index}`}
@@ -425,11 +421,11 @@ const Notifications = () => {
                   {/* Items - Flexible height with smooth scroll */}
                   <div className="flex-grow mb-4">
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2"
-                         style={{ 
-                           scrollBehavior: 'smooth',
-                           scrollbarWidth: 'thin',
-                           scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
-                         }}>
+                      style={{
+                        scrollBehavior: 'smooth',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+                      }}>
                       {order.items.map((item, itemIndex) => (
                         <div key={itemIndex} className="border-b border-gray-200 pb-2 last:border-b-0">
                           <div className="flex justify-between">
@@ -449,14 +445,14 @@ const Notifications = () => {
                   {/* Footer - Action buttons fixed at bottom */}
                   <div className="flex justify-end items-center mt-auto">
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         className="w-8 h-8 bg-white border-2 border-green-500 text-green-500 rounded-lg hover:bg-green-50 shadow-md shadow-green-200 disabled:opacity-50 transition-all duration-200"
                         onClick={() => handleOrderAction(order, 'delivered')}
                         disabled={isOrderCompleted(order.status)}
                       >
                         ✓
                       </button>
-                      <button 
+                      <button
                         className="w-8 h-8 bg-white border-2 border-red-500 text-red-500 rounded-lg hover:bg-red-50 shadow-md shadow-red-200 disabled:opacity-50 transition-all duration-200"
                         onClick={() => handleOrderAction(order, 'cancel')}
                         disabled={isOrderCompleted(order.status)}
@@ -476,7 +472,7 @@ const Notifications = () => {
       {activeTab === 'inventory' && (
         <div className="space-y-6">
           {/* Inventory Heading */}
-          <h3 className="text-xl font-semibold text-gray-800">Inventory</h3>
+          {/* This heading is now managed by getHeadingText and combined with buttons */}
 
           {/* Loading State */}
           {loading && (
@@ -487,12 +483,12 @@ const Notifications = () => {
 
           {/* Inventory Cards - Scrollable */}
           {!loading && (
-            <div className="max-h-[500px] overflow-y-auto pr-2" 
-                 style={{ 
-                   scrollBehavior: 'smooth',
-                   scrollbarWidth: 'thin',
-                   scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
-                 }}>
+            <div className="max-h-[500px] overflow-y-auto pr-2"
+              style={{
+                scrollBehavior: 'smooth',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+              }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filterStockByCategory().length === 0 ? (
                   <div className="col-span-full text-center py-8 text-gray-500">
@@ -515,21 +511,20 @@ const Notifications = () => {
                       </div>
                       <div className="text-sm text-gray-700">
                         Status:{' '}
-                        <span 
-                          className={`font-semibold ${
-                            item.quantity <= item.threshold 
-                              ? 'text-red-600' 
-                              : item.quantity <= item.threshold * 1.5
+                        <span
+                          className={`font-semibold ${item.quantity <= item.threshold
+                            ? 'text-red-600'
+                            : item.quantity <= item.threshold * 1.5
                               ? 'text-yellow-600'
                               : 'text-green-600'
-                          }`}
+                            }`}
                         >
                           {getStockStatus(item.quantity, item.threshold)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-2">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="bg-success"
                           variant='success'
                           onClick={() => {
@@ -539,8 +534,8 @@ const Notifications = () => {
                         >
                           Restock
                         </Button>
-                        <span 
-                          className="text-xs text-gray-400 underline cursor-pointer" 
+                        <span
+                          className="text-xs text-gray-400 underline cursor-pointer"
                           onClick={() => navigate('/inventory')}
                         >
                           View Inventory
@@ -562,14 +557,14 @@ const Notifications = () => {
         title={getOrderModalContent().title}
         footer={
           <div className="space-x-2">
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={handleCloseOrderModal}
               disabled={orderActionLoading}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant={orderModalAction === 'delivered' ? 'success' : 'danger'}
               onClick={handleConfirmOrderAction}
               disabled={orderActionLoading}
@@ -586,9 +581,9 @@ const Notifications = () => {
               {ordersError}
             </div>
           )}
-          
+
           <p className="text-gray-600">{getOrderModalContent().message}</p>
-          
+
           {selectedOrder && (
             <div className="bg-gray-50 p-3 rounded">
               <p className="font-medium">Order Details:</p>
@@ -607,14 +602,14 @@ const Notifications = () => {
         title="Restock Item"
         footer={
           <div className="space-x-2">
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={handleCloseModal}
               disabled={modalLoading}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="success"
               onClick={handleRestock}
               disabled={modalLoading || !quantity}
@@ -632,7 +627,7 @@ const Notifications = () => {
                 {error}
               </div>
             )}
-            
+
             {/* Table-style display for item details */}
             <table className="w-full text-sm border border-gray-300 rounded">
               <thead className="bg-gray-100">
@@ -652,7 +647,7 @@ const Notifications = () => {
                 </tr>
               </tbody>
             </table>
-            
+
             {/* Quantity input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
