@@ -48,7 +48,7 @@ function App() {
           />
 
           <Route
-            path="/notifications"
+            path="/apporders"
             element={
               <ProtectedRoute>
                 <Layout>

@@ -11,13 +11,18 @@ const Dashboard = () => {
     const [orderInput, setOrderInput] = useState('')
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [searchQuery, setSearchQuery] = useState('')
-    const [allOrders, setAllOrders] = useState([])
+    const [orders, setOrders] = useState([]) // Orders for the current page
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [selectedItems, setSelectedItems] = useState([])
     const [showModal, setShowModal] = useState(false)
     const [modalAction, setModalAction] = useState('')
     const [actionLoading, setActionLoading] = useState(false)
+    
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1)
+    const [ordersPerPage] = useState(10) // 10 orders per page
+    const [totalOrdersCount, setTotalOrdersCount] = useState(0)
     
     // New state for home data
     const [homeData, setHomeData] = useState({
@@ -27,7 +32,8 @@ const Dashboard = () => {
         peakSlot: null,
         bestSellerProduct: null,
         totalRechargedAmount: 0,
-        lowStockProducts: []
+        lowStockProducts: [],
+        ticketsCount: 0 // Added tickets count
     })
     const [homeDataLoading, setHomeDataLoading] = useState(true)
 
@@ -43,21 +49,37 @@ const Dashboard = () => {
 
             try {
                 setHomeDataLoading(true)
-                const response = await apiRequest('/staff/outlets/get-home-data/')
+                const [homeResponse, ticketsResponse] = await Promise.all([
+                    apiRequest('/staff/outlets/get-home-data/'),
+                    apiRequest('/staff/tickets/count/') // New endpoint for ticket count
+                ])
                 
-                if (response) {
+                if (homeResponse) {
                     setHomeData({
-                        totalRevenue: response.totalRevenue || 0,
-                        appOrders: response.appOrders || 0,
-                        manualOrders: response.manualOrders || 0,
-                        peakSlot: response.peakSlot || null,
-                        bestSellerProduct: response.bestSellerProduct || null,
-                        totalRechargedAmount: response.totalRechargedAmount || 0,
-                        lowStockProducts: response.lowStockProducts || []
+                        totalRevenue: homeResponse.totalRevenue || 0,
+                        appOrders: homeResponse.appOrders || 0,
+                        manualOrders: homeResponse.manualOrders || 0,
+                        peakSlot: homeResponse.peakSlot || null,
+                        bestSellerProduct: homeResponse.bestSellerProduct || null,
+                        totalRechargedAmount: homeResponse.totalRechargedAmount || 0,
+                        lowStockProducts: homeResponse.lowStockProducts || [],
+                        ticketsCount: ticketsResponse?.count || 0
                     })
                 }
             } catch (err) {
                 console.error('Error fetching home data:', err)
+                // Fallback if tickets endpoint fails
+                try {
+                    const homeResponse = await apiRequest('/staff/outlets/get-home-data/')
+                    if (homeResponse) {
+                        setHomeData({
+                            ...homeResponse,
+                            ticketsCount: 0
+                        })
+                    }
+                } catch (fallbackErr) {
+                    console.error('Error fetching fallback home data:', fallbackErr)
+                }
             } finally {
                 setHomeDataLoading(false)
             }
@@ -66,66 +88,66 @@ const Dashboard = () => {
         fetchHomeData()
     }, [outletId])
 
-    // Fetch recent orders from API
-    useEffect(() => {
-        const fetchRecentOrders = async () => {
-            if (!outletId) {
-                setError('Outlet ID not found')
-                setLoading(false)
-                return
-            }
-
-            try {
-                setLoading(true)
-                const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/`)
-
-                if (response.orders) {
-                    // Transform API data to match the expected format
-                    const transformedOrders = response.orders.map(order => {
-                        // Format items string
-                        const itemsString = order.items.map(item =>
-                            `${item.name} (${item.quantity})`
-                        ).join(', ')
-
-                        // Format time from createdAt
-                        const orderTime = new Date(order.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })
-
-                        return {
-                            id: `#${order.billNumber}`,
-                            customer: order.customerName,
-                            items: itemsString,
-                            time: orderTime,
-                            status: order.status.toLowerCase(),
-                            billNumber: order.billNumber,
-                            orderType: order.orderType,
-                            paymentMode: order.paymentMode,
-                            originalItems: order.items,
-                            createdAt: order.createdAt
-                        }
-                    })
-
-                    setAllOrders(transformedOrders)
-                } else {
-                    setAllOrders([])
-                }
-                setError(null)
-            } catch (err) {
-                console.error('Error fetching recent orders:', err)
-                setError('Failed to fetch recent orders')
-                setAllOrders([])
-            } finally {
-                setLoading(false)
-            }
+    // Fetch recent orders with pagination
+    const fetchRecentOrders = async (page = currentPage) => {
+        if (!outletId) {
+            setError('Outlet ID not found')
+            setLoading(false)
+            return
         }
 
-        fetchRecentOrders()
-    }, [outletId])
+        setLoading(true)
+        try {
+            const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/?page=${page}&limit=${ordersPerPage}`)
+
+            if (response.orders) {
+                const transformedOrders = response.orders.map(order => {
+                    const itemsString = order.items.map(item =>
+                        `${item.name} (${item.quantity})`
+                    ).join(', ')
+
+                    const orderTime = new Date(order.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+
+                    return {
+                        id: `#${order.billNumber}`,
+                        customer: order.customerName,
+                        items: itemsString,
+                        time: orderTime,
+                        status: order.status.toLowerCase(),
+                        billNumber: order.billNumber,
+                        orderType: order.orderType,
+                        paymentMode: order.paymentMode,
+                        originalItems: order.items,
+                        createdAt: order.createdAt
+                    }
+                })
+
+                setOrders(transformedOrders)
+                setTotalOrdersCount(response.total)
+                setCurrentPage(response.currentPage)
+            } else {
+                setOrders([])
+            }
+            setError(null)
+        } catch (err) {
+            console.error('Error fetching recent orders:', err)
+            setError('Failed to fetch recent orders')
+            setOrders([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Initial fetch and fetch when page changes
+    useEffect(() => {
+        fetchRecentOrders(currentPage)
+    }, [outletId, currentPage])
 
     // Filter orders based on search query
-    const filteredOrders = allOrders.filter(order =>
+    const filteredOrders = orders.filter(order =>
         order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.customer.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -324,40 +346,7 @@ const Dashboard = () => {
                 // Dynamically re-fetch the order to reflect the changes
                 searchOrder()
                 // Refresh recent orders list in background
-                const fetchRecentOrders = async () => {
-                    try {
-                        const recentResponse = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/`)
-                        if (recentResponse.orders) {
-                            const transformedOrders = recentResponse.orders.map(order => {
-                                const itemsString = order.items.map(item =>
-                                    `${item.name} (${item.quantity})`
-                                ).join(', ')
-
-                                const orderTime = new Date(order.createdAt).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                })
-
-                                return {
-                                    id: `#${order.billNumber}`,
-                                    customer: order.customerName,
-                                    items: itemsString,
-                                    time: orderTime,
-                                    status: order.status.toLowerCase(),
-                                    billNumber: order.billNumber,
-                                    orderType: order.orderType,
-                                    paymentMode: order.paymentMode,
-                                    originalItems: order.items,
-                                    createdAt: order.createdAt
-                                }
-                            })
-                            setAllOrders(transformedOrders)
-                        }
-                    } catch (err) {
-                        console.error('Error refreshing recent orders:', err)
-                    }
-                }
-                fetchRecentOrders()
+                fetchRecentOrders(1, false)
             }
         } catch (err) {
             console.error('Error updating order:', err)
@@ -446,6 +435,8 @@ const Dashboard = () => {
         return DeliverySlot[slot] || 'Invalid Slot';
     }
 
+    const totalPages = Math.ceil(totalOrdersCount / ordersPerPage)
+
     return (
         <div className="space-y-6">
             <div>
@@ -490,9 +481,9 @@ const Dashboard = () => {
                 </Card>
                 
                 <Card Black className="text-center">
-                    <p className="text-gray-600">Refund Requests</p>
+                    <p className="text-gray-600">Tickets Raised</p>
                     <h2 className="text-2xl font-bold text-purple-600">
-                        N/A
+                        {homeDataLoading ? '...' : homeData.ticketsCount}
                     </h2>
                 </Card>
                 
@@ -617,189 +608,189 @@ const Dashboard = () => {
                             <div className="overflow-hidden">
                                 {/* The lines below are the key to the fix. We are only calculating these variables if selectedOrder exists. */}
                                 {(() => {
-                                    const selectableItemsCount = getSelectableItemsCount()
-                                    const isDeliverAllDisabled = selectedItems.length === 0 || selectedItems.length < selectableItemsCount
-                                    const isPartiallyDeliverDisabled = selectedItems.length === 0 || selectedItems.length === selectableItemsCount
+                                        const selectableItemsCount = getSelectableItemsCount()
+                                        const isDeliverAllDisabled = selectedItems.length === 0 || selectedItems.length < selectableItemsCount
+                                        const isPartiallyDeliverDisabled = selectedItems.length === 0 || selectedItems.length === selectableItemsCount
 
-                                    return (
-                                        <>
-                                            {/* Order Header */}
-                                            <div className="bg-gray-50 p-4 border-b -m-6 mb-6">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <h4 className="font-semibold text-lg">{selectedOrder.id}</h4>
-                                                        <p className="text-gray-600">{selectedOrder.customer}</p>
-                                                        {selectedOrder.outletName && (
-                                                            <p className="text-sm text-blue-500">Outlet: {selectedOrder.outletName}</p>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <Badge variant={getStatusVariant(selectedOrder.status)}>
-                                                            {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1).replace('_', ' ')}
-                                                        </Badge>
-                                                        <p className="text-sm text-gray-500 mt-1">
-                                                            {new Date(selectedOrder.createdAt).toLocaleString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Item Selection Controls */}
-                                            {!isOrderCompleted() && selectableItemsCount > 0 && (
-                                                <div className="mb-4">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h5 className="font-medium">Items Ordered:</h5>
-                                                        <button
-                                                            onClick={handleSelectAll}
-                                                            className="text-sm text-blue-600 hover:text-blue-800"
-                                                        >
-                                                            {selectedItems.length === selectableItemsCount ? 'Deselect All' : 'Select All'}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Show completed order message */}
-                                            {isOrderCompleted() && (
-                                                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                                                    <div className="text-green-500 text-3xl mb-2">✅</div>
-                                                    <p className="text-green-700 font-medium text-lg">
-                                                        This order has been {selectedOrder.status === 'delivered' ? 'delivered' : selectedOrder.status === 'cancelled' ? 'cancelled' : 'completed'} successfully!
-                                                    </p>
-                                                    <p className="text-green-600 text-sm mt-1">
-                                                        {selectedOrder.status === 'delivered' ? 'All items have been delivered to the customer.' :
-                                                            selectedOrder.status === 'cancelled' ? 'This order has been cancelled and stock has been restored.' :
-                                                                'This order has been completed.'}
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            {/* Show partially delivered order message */}
-                                            {isOrderPartiallyDelivered() && !isOrderCompleted() && (
-                                                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                                    <div className="flex items-start space-x-3">
-                                                        <div className="text-yellow-500 text-2xl">⚠️</div>
+                                        return (
+                                            <>
+                                                {/* Order Header */}
+                                                <div className="bg-gray-50 p-8 border-b -m-6 mb-6">
+                                                    <div className="flex justify-between items-start">
                                                         <div>
-                                                            <p className="text-yellow-700 font-medium">Partially Delivered Order</p>
-                                                            <p className="text-yellow-600 text-sm mt-1">
-                                                                {getDeliveredItemsCount()} of {selectedOrder.items.length} items delivered. 
-                                                                {selectedOrder && selectedOrder.items && getRemainingUndeliveredItemsCount() > 0 && (
-    <span> You can cancel the remaining {getRemainingUndeliveredItemsCount()} undelivered item{getRemainingUndeliveredItemsCount() > 1 ? 's' : ''} if needed.</span>
-)}
+                                                            <h4 className="font-semibold text-lg">{selectedOrder.id}</h4>
+                                                            <p className="text-gray-600">{selectedOrder.customer}</p>
+                                                            {selectedOrder.outletName && (
+                                                                <p className="text-sm text-blue-500">Outlet: {selectedOrder.outletName}</p>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <Badge variant={getStatusVariant(selectedOrder.status)}>
+                                                                {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1).replace('_', ' ')}
+                                                            </Badge>
+                                                            <p className="text-sm text-gray-500 mt-1">
+                                                                {new Date(selectedOrder.createdAt).toLocaleString()}
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )}
 
-                                            {/* Order Items with Checkboxes */}
-                                            <div className="space-y-2 mb-4">
-                                                {selectedOrder.items.map((item, index) => (
-                                                    <div key={index} className="flex items-center space-x-3 py-2 border-b border-gray-100 last:border-b-0">
-                                                        {!isOrderCompleted() && (
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedItems.includes(item.id)}
-                                                                onChange={() => handleItemSelection(item.id)}
-                                                                disabled={!canSelectItem(item)}
-                                                                className={`w-4 h-4 text-blue-600 rounded ${!canSelectItem(item) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                            />
-                                                        )}
-                                                        <div className="flex-1 flex justify-between items-center">
-                                                            <div>
-                                                                <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
-                                                                    {item.name}
-                                                                </span>
-                                                                <span className="text-gray-500 ml-2">×{item.quantity}</span>
-                                                                {item.status && (
-                                                                    <Badge variant={getStatusVariant(item.status.toLowerCase())} className="ml-2 text-xs">
-                                                                        {item.status}
-                                                                    </Badge>
-                                                                )}
-                                                                {isItemDelivered(item.status) && (
-                                                                    <span className="ml-2 text-green-600 text-xs">✓</span>
-                                                                )}
-                                                            </div>
-                                                            <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
-                                                                ₹ {item.price.toFixed(2)}
-                                                            </span>
+                                                {/* Item Selection Controls */}
+                                                {!isOrderCompleted() && selectableItemsCount > 0 && (
+                                                    <div className="mb-4">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h5 className="font-medium">Items Ordered:</h5>
+                                                            <button
+                                                                onClick={handleSelectAll}
+                                                                className="text-sm text-blue-600 hover:text-blue-800"
+                                                            >
+                                                                {selectedItems.length === selectableItemsCount ? 'Deselect All' : 'Select All'}
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
+                                                )}
 
-                                            {/* Total - Moved above action buttons */}
-                                            <div className="flex justify-between items-center py-3 border-t border-gray-200 mb-4">
-                                                <span className="font-semibold text-lg">Total:</span>
-                                                <span className="font-bold text-lg text-green-600">₹ {selectedOrder.total.toFixed(2)}</span>
-                                            </div>
+                                                {/* Show completed order message */}
+                                                {isOrderCompleted() && (
+                                                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                                                        <div className="text-green-500 text-3xl mb-2">✅</div>
+                                                        <p className="text-green-700 font-medium text-lg">
+                                                            This order has been {selectedOrder.status === 'delivered' ? 'delivered' : selectedOrder.status === 'cancelled' ? 'cancelled' : 'completed'} successfully!
+                                                        </p>
+                                                        <p className="text-green-600 text-sm mt-1">
+                                                            {selectedOrder.status === 'delivered' ? 'All items have been delivered to the customer.' :
+                                                                selectedOrder.status === 'cancelled' ? 'This order has been cancelled and stock has been restored.' :
+                                                                    'This order has been completed.'}
+                                                        </p>
+                                                    </div>
+                                                )}
 
-                                            {/* Action Buttons - Show different buttons based on order status */}
-                                            {!isOrderCompleted() && (
-                                                <div className="space-y-2">
-                                                    {/* Normal order actions (PENDING status) */}
-                                                    {selectedOrder.status.toLowerCase() === 'pending' && (
-                                                        <div className="flex space-x-2">
-                                                            <Button
-                                                                onClick={() => openModal('delivered')}
-                                                                disabled={isDeliverAllDisabled}
-                                                                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                                            >
-                                                                Mark All Delivered
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() => openModal('partially')}
-                                                                disabled={isPartiallyDeliverDisabled}
-                                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                                            >
-                                                                Deliver Selected Items
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() => openModal('cancel')}
-                                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                                                            >
-                                                                Cancel Order
-                                                            </Button>
+                                                {/* Show partially delivered order message */}
+                                                {isOrderPartiallyDelivered() && !isOrderCompleted() && (
+                                                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                        <div className="flex items-start space-x-3">
+                                                            <div className="text-yellow-500 text-2xl">⚠️</div>
+                                                            <div>
+                                                                <p className="text-yellow-700 font-medium">Partially Delivered Order</p>
+                                                                <p className="text-yellow-600 text-sm mt-1">
+                                                                    {getDeliveredItemsCount()} of {selectedOrder.items.length} items delivered. 
+                                                                    {selectedOrder && selectedOrder.items && getRemainingUndeliveredItemsCount() > 0 && (
+                                                                        <span> You can cancel the remaining {getRemainingUndeliveredItemsCount()} undelivered item{getRemainingUndeliveredItemsCount() > 1 ? 's' : ''} if needed.</span>
+                                                                    )}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                )}
 
-                                                    {/* Partially delivered order actions */}
-                                                    {isOrderPartiallyDelivered() && (
-                                                        <div className="flex space-x-2">
-                                                            <Button
-                                                                onClick={() => openModal('delivered')}
-                                                                disabled={isDeliverAllDisabled}
-                                                                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                                            >
-                                                                Mark All Delivered
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() => openModal('partially')}
-                                                                disabled={isPartiallyDeliverDisabled}
-                                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                                            >
-                                                                Deliver Selected Items
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() => openModal('partialCancel')}
-                                                                disabled={getRemainingUndeliveredItemsCount() === 0}
-                                                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
-                                                            >
-                                                                Cancel Remaining Items
-                                                            </Button>
+                                                {/* Order Items with Checkboxes */}
+                                                <div className="space-y-2 mb-4">
+                                                    {selectedOrder.items.map((item, index) => (
+                                                        <div key={index} className="flex items-center space-x-3 py-2 border-b border-gray-100 last:border-b-0">
+                                                            {!isOrderCompleted() && (
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedItems.includes(item.id)}
+                                                                    onChange={() => handleItemSelection(item.id)}
+                                                                    disabled={!canSelectItem(item)}
+                                                                    className={`w-4 h-4 text-blue-600 rounded ${!canSelectItem(item) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                />
+                                                            )}
+                                                            <div className="flex-1 flex justify-between items-center">
+                                                                <div>
+                                                                    <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
+                                                                        {item.name}
+                                                                    </span>
+                                                                    <span className="text-gray-500 ml-2">×{item.quantity}</span>
+                                                                    {item.status && (
+                                                                        <Badge variant={getStatusVariant(item.status.toLowerCase())} className="ml-2 text-xs">
+                                                                            {item.status}
+                                                                        </Badge>
+                                                                    )}
+                                                                    {isItemDelivered(item.status) && (
+                                                                        <span className="ml-2 text-green-600 text-xs">✓</span>
+                                                                    )}
+                                                                </div>
+                                                                <span className={`font-medium ${isItemDelivered(item.status) ? 'text-gray-500' : ''}`}>
+                                                                    ₹ {item.price.toFixed(2)}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    )}
-
-                                                    {/* Info text for partially delivered orders */}
-                                                    {isOrderPartiallyDelivered() && (
-                                                        <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-                                                            <p><strong>Tip:</strong> Use "Cancel Remaining Items" to refund and restore stock for all undelivered items, completing this order.</p>
-                                                        </div>
-                                                    )}
+                                                    ))}
                                                 </div>
-                                            )}
-                                        </>
-                                    )
+
+                                                {/* Total - Moved above action buttons */}
+                                                <div className="flex justify-between items-center py-3 border-t border-gray-200 mb-4">
+                                                    <span className="font-semibold text-lg">Total:</span>
+                                                    <span className="font-bold text-lg text-green-600">₹ {selectedOrder.total.toFixed(2)}</span>
+                                                </div>
+
+                                                {/* Action Buttons - Show different buttons based on order status */}
+                                                {!isOrderCompleted() && (
+                                                    <div className="space-y-2">
+                                                        {/* Normal order actions (PENDING status) */}
+                                                        {selectedOrder.status.toLowerCase() === 'pending' && (
+                                                            <div className="flex space-x-2">
+                                                                <Button
+                                                                    onClick={() => openModal('delivered')}
+                                                                    disabled={isDeliverAllDisabled}
+                                                                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                                                >
+                                                                    Mark All Delivered
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={() => openModal('partially')}
+                                                                    disabled={isPartiallyDeliverDisabled}
+                                                                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                                                >
+                                                                    Deliver Selected Items
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={() => openModal('cancel')}
+                                                                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+                                                                >
+                                                                    Cancel Order
+                                                                </Button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Partially delivered order actions */}
+                                                        {isOrderPartiallyDelivered() && (
+                                                            <div className="flex space-x-2">
+                                                                <Button
+                                                                    onClick={() => openModal('delivered')}
+                                                                    disabled={isDeliverAllDisabled}
+                                                                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                                                >
+                                                                    Mark All Delivered
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={() => openModal('partially')}
+                                                                    disabled={isPartiallyDeliverDisabled}
+                                                                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                                                >
+                                                                    Deliver Selected Items
+                                                                </Button>
+                                                                <Button
+                                                                    onClick={() => openModal('partialCancel')}
+                                                                    disabled={getRemainingUndeliveredItemsCount() === 0}
+                                                                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+                                                                >
+                                                                    Cancel Remaining Items
+                                                                </Button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Info text for partially delivered orders */}
+                                                        {isOrderPartiallyDelivered() && (
+                                                            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                                                                <p><strong>Tip:</strong> Use "Cancel Remaining Items" to refund and restore stock for all undelivered items, completing this order.</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )
                                 })()}
                             </div>
                         )}
@@ -836,10 +827,33 @@ const Dashboard = () => {
                             </p>
                         </div>
                     ) : (
-                        <Table
-                            headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
-                            data={recentOrders}
-                        />
+                        <>
+                            <Table
+                                headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
+                                data={recentOrders}
+                            />
+                            
+                            {/* Pagination Controls */}
+                            <div className="flex justify-center items-center gap-4 mt-4">
+                                <Button
+                                    onClick={() => setCurrentPage(prev => prev - 1)}
+                                    disabled={currentPage === 1}
+                                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded disabled:bg-gray-100 disabled:text-gray-400"
+                                >
+                                     &lt;
+                                </Button>
+                                <span className="text-sm text-gray-600">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <Button
+                                    onClick={() => setCurrentPage(prev => prev + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded disabled:bg-gray-100 disabled:text-gray-400"
+                                >
+                                    &gt;
+                                </Button>
+                            </div>
+                        </>
                     )}
                 </Card>
             </div>

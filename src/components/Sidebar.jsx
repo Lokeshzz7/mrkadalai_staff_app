@@ -28,8 +28,8 @@ const Sidebar = ({ onClose }) => {
             permission: null // No permission required
         },
         {
-            name: 'Notifications',
-            href: '/notifications',
+            name: 'App Orders',
+            href: '/apporders',
             icon: Bell,
             permission: null // No permission required
         },
