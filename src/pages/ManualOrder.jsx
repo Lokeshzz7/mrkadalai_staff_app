@@ -1,12 +1,291 @@
-import React, { useState, useEffect } from 'react'
-
-import Card from '../components/ui/Card'
-import Badge from '../components/ui/Badge'
-import Button from '../components/ui/Button'
-import Modal from '../components/ui/Modal'
-import { apiRequest } from '../utils/api'
-import { useOutletDetails } from '../utils/outletUtils'
+import React, { useState, useEffect } from 'react';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
+import { apiRequest } from '../utils/api';
+import { useOutletDetails } from '../utils/outletUtils';
 import { toast } from 'react-hot-toast';
+
+// Helper Component for the Menu Page
+const MenuPage = ({
+    selectedItems,
+    searchQuery,
+    setSearchQuery,
+    activeCategory,
+    setActiveCategory,
+    isLoading,
+    error,
+    filteredMenuItems,
+    categories,
+    addToOrder,
+    updateQuantity,
+    getTotalAmount,
+    handlePlaceOrder,
+}) => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
+        {/* Left: Order Summary */}
+        <div className="lg:col-span-1 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
+            <div className="p-4 border-b flex-shrink-0">
+                <h2 className="text-xl font-semibold">Your Order</h2>
+            </div>
+
+            {/* Scrollable order items area */}
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+                {selectedItems.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                        <span className="text-4xl mb-2">🛒</span>
+                        <p>Your order is empty.</p>
+                        <p className="text-sm">Add items from the menu to get started!</p>
+                    </div>
+                )}
+                <div className="space-y-4">
+                    {selectedItems.map(item => (
+                        <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg bg-gray-50">
+                            <img src={item.img} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold truncate">{item.name}</h4>
+                                <p className="text-sm text-gray-600">₹{item.price}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                        className="w-8 h-8 p-0 text-sm"
+                                    >
+                                        -
+                                    </Button>
+                                    <span className="font-medium text-lg min-w-[20px] text-center">
+                                        {item.quantity}
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                        className="w-8 h-8 p-0 text-sm"
+                                    >
+                                        +
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-bold text-lg text-green-600">₹{(item.price * item.quantity).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Fixed footer for total and button */}
+            {selectedItems.length > 0 && (
+                <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="font-bold text-xl">Total:</span>
+                        <span className="font-bold text-xl text-green-600">₹{getTotalAmount()}</span>
+                    </div>
+                    <Button
+                        className="w-full"
+                        variant="success"
+                        onClick={handlePlaceOrder}
+                    >
+                        Place Order ({selectedItems.length} items)
+                    </Button>
+                </div>
+            )}
+        </div>
+
+        {/* Right: Menu Items */}
+        <div className="lg:col-span-2 bg-gray-50 flex flex-col overflow-hidden">
+            {/* Fixed header with search and categories */}
+            <div className="p-4 bg-white rounded-lg shadow-sm m-4 mb-0 flex-shrink-0">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search items..."
+                        className="w-full md:w-1/2 p-2 border rounded-lg"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                        <Button
+                            variant={activeCategory === 'all' ? 'black' : 'secondary'}
+                            onClick={() => setActiveCategory('all')}
+                            size="sm"
+                        >All</Button>
+                        {categories.map(category => (
+                            <Button
+                                key={category}
+                                variant={activeCategory === category ? 'black' : 'secondary'}
+                                onClick={() => setActiveCategory(category)}
+                                size="sm"
+                            >
+                                {category.charAt(0).toUpperCase() + category.slice(1)}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Scrollable menu items area */}
+            <div className="flex-1 overflow-y-auto p-4 pt-4 scrollbar-hide">
+                {isLoading && (
+                    <div className="flex justify-center items-center h-full">
+                        <div className="text-gray-500">Loading delicious items...</div>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="flex flex-col items-center justify-center h-full text-red-500">
+                        <p className="text-lg mb-2">Oops! Something went wrong.</p>
+                        <p className="text-sm text-gray-500">{error}</p>
+                        <Button
+                            onClick={() => window.location.reload()}
+                            className="mt-4"
+                            size="sm"
+                        >
+                            Try Again
+                        </Button>
+                    </div>
+                )}
+
+                {!isLoading && !error && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {filteredMenuItems.map(item => (
+                            <div
+                                key={item.id}
+                                className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:scale-105 cursor-pointer"
+                                onClick={() => addToOrder(item)}
+                            >
+                                <div className="relative w-full h-48">
+                                    <img
+                                        src={item.img}
+                                        alt={item.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    {item.quantityAvailable === 0 && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                                            <span className="text-white text-lg font-semibold">Out of Stock</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-4">
+                                    <h4 className="text-lg font-semibold truncate mb-1">{item.name}</h4>
+                                    <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-2xl font-bold text-green-600">₹{item.price}</span>
+                                        <Badge variant={item.quantityAvailable > 0 ? 'success' : 'danger'}>
+                                            {item.quantityAvailable > 0 ? `${item.quantityAvailable} in stock` : 'Sold out'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {filteredMenuItems.length === 0 && (
+                            <p className="col-span-full text-center text-gray-500 py-8">No items found</p>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    </div>
+);
+
+// Helper Component for the Payment Page
+const PaymentPage = ({
+    currentOrder,
+    paymentMethod,
+    setPaymentMethod,
+    isProcessingPayment,
+    handleBackToMenu,
+    handlePaymentComplete,
+}) => (
+    <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] h-full gap-4 p-4">
+        <div className="overflow-y-auto scrollbar-hide">
+            <Card title='Order Details'>
+                <div className="space-y-4">
+                    <div className="space-y-3">
+                        {currentOrder?.items.map(item => (
+                            <div key={item.id} className="border-b pb-2">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1 min-w-0 pr-3">
+                                        <p className="font-medium text-sm">{item.name}</p>
+                                        <p className="text-xs text-gray-600">
+                                            ₹{item.price} × {item.quantity}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="border-t pt-2">
+                        <div className="flex justify-between text-lg font-bold">
+                            <span>Total Amount:</span>
+                            <span>₹{currentOrder?.total}</span>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+        </div>
+        <div className="overflow-y-auto scrollbar-hide">
+            <Card title="Choose Payment Method">
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { id: 'CASH', name: 'Cash', icon: '💵' },
+                            { id: 'UPI', name: 'UPI', icon: '📱' },
+                        ].map(method => (
+                            <div
+                                key={method.id}
+                                className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === method.id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                                onClick={() => setPaymentMethod(method.id)}
+                            >
+                                <div className="text-center">
+                                    <div className="text-2xl mb-1">{method.icon}</div>
+                                    <p className="font-medium text-sm">{method.name}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {paymentMethod && (
+                        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-medium mb-2">Selected: {
+                                paymentMethod === 'CASH' ? 'Cash Payment' :
+                                    paymentMethod === 'UPI' ? 'UPI Payment' :
+                                        'Unknown'
+                            }</h4>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Amount to pay: ₹{currentOrder?.total}
+                            </p>
+                        </div>
+                    )}
+                    <div className="flex gap-3 mt-6">
+                        <Button
+                            variant="outline"
+                            onClick={handleBackToMenu}
+                            className="flex-1"
+                        >
+                            Back to Menu
+                        </Button>
+                        <Button
+                            variant="success"
+                            onClick={handlePaymentComplete}
+                            disabled={!paymentMethod || isProcessingPayment}
+                            className="flex-1"
+                        >
+                            {isProcessingPayment ? 'Processing...' : 'Complete Payment'}
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    </div>
+);
 
 
 const ManualOrder = () => {
@@ -65,6 +344,11 @@ const ManualOrder = () => {
     }
 
     const addToOrder = (item) => {
+        if (item.quantityAvailable === 0) {
+            toast.error(`${item.name} is out of stock.`);
+            return;
+        }
+
         const exists = selectedItems.find(i => i.id === item.id)
         if (exists) {
             // Check if we can add more (don't exceed available quantity)
@@ -73,7 +357,7 @@ const ManualOrder = () => {
                     i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
                 ))
             } else {
-                toast.success(`Only ${item.quantityAvailable} units available for ${item.name}`)
+                toast.error(`Only ${item.quantityAvailable} units available for ${item.name}`)
             }
         } else {
             setSelectedItems([...selectedItems, { ...item, quantity: 1 }])
@@ -90,7 +374,7 @@ const ManualOrder = () => {
         } else {
             const item = menuItems.find(i => i.id === itemId)
             if (newQuantity > item.quantityAvailable) {
-                toast.success(`Only ${item.quantityAvailable} units available for ${item.name}`)
+                toast.error(`Only ${item.quantityAvailable} units available for ${item.name}`)
                 return
             }
             setSelectedItems(selectedItems.map(item =>
@@ -186,7 +470,6 @@ const ManualOrder = () => {
 
     const handleBackToMenu = () => {
         setCurrentPage('menu')
-        setPaymentMethod('')
     }
 
     const filteredMenuItems = menuItems.filter(item =>
@@ -197,282 +480,34 @@ const ManualOrder = () => {
     // Get unique categories from menuItems
     const categories = [...new Set(menuItems.map(item => item.category))]
 
-    // Payment Page Component
-    const PaymentPage = () => (
-        <div className="grid grid-cols-1 lg:grid-cols-2 h-screen gap-4 p-4">
-            {/* Left: Bill Details */}
-            <div className="overflow-y-auto">
-                <Card title={`Order #${currentOrder?.id}`}>
-                    <div className="space-y-4">
-                        <div className="text-sm text-gray-600 mb-4">
-                            Order Time: {new Date(currentOrder?.timestamp).toLocaleString()}
-                        </div>
-
-                        <div className="space-y-3">
-                            {currentOrder?.items.map(item => (
-                                <div key={item.id} className="border-b pb-2">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1 min-w-0 pr-3">
-                                            <p className="font-medium text-sm">{item.name}</p>
-                                            <p className="text-xs text-gray-600">
-                                                ₹{item.price} × {item.quantity}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-medium text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="border-t pt-4">
-                            <div className="flex justify-between text-lg font-bold">
-                                <span>Total Amount:</span>
-                                <span>₹{currentOrder?.total}</span>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-
-            {/* Right: Payment Methods */}
-            <div className="overflow-y-auto">
-                <Card title="Choose Payment Method">
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            {[
-                                { id: 'CASH', name: 'Cash', icon: '💵' },
-                                { id: 'UPI', name: 'UPI', icon: '📱' },
-                                { id: 'CARD', name: 'Credit Card', icon: '💳' },
-                                { id: 'WALLET', name: 'Wallet', icon: '👛' }
-                            ].map(method => (
-                                <div
-                                    key={method.id}
-                                    className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === method.id
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
-                                    onClick={() => setPaymentMethod(method.id)}
-                                >
-                                    <div className="text-center">
-                                        <div className="text-2xl mb-1">{method.icon}</div>
-                                        <p className="font-medium text-sm">{method.name}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {paymentMethod && (
-                            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                                <h4 className="font-medium mb-2">Selected: {
-                                    paymentMethod === 'cash' ? 'Cash Payment' :
-                                        paymentMethod === 'upi' ? 'UPI Payment' :
-                                            paymentMethod === 'card' ? 'Credit Card Payment' :
-                                                'Wallet Payment'
-                                }</h4>
-                                <p className="text-sm text-gray-600 mb-4">
-                                    Amount to pay: ₹{currentOrder?.total}
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="flex gap-3 mt-6">
-                            <Button
-                                variant="outline"
-                                onClick={handleBackToMenu}
-                                className="flex-1"
-                            >
-                                Back to Menu
-                            </Button>
-                            <Button
-                                variant="success"
-                                onClick={handlePaymentComplete}
-                                disabled={!paymentMethod || isProcessingPayment}
-                                className="flex-1"
-                            >
-                                {isProcessingPayment ? 'Processing...' : 'Complete Payment'}
-                            </Button>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-        </div>
-    )
-
-    // Main Menu Page Component
-    const MenuPage = () => (
-        <div className="grid grid-cols-1 lg:grid-cols-3 h-screen overflow-hidden gap-4">
-            {/* Left: Order Summary */}
-            <div className="lg:col-span-1 overflow-y-auto p-4">
-                <Card title="Your Order">
-                    <div className="space-y-3">
-                        {selectedItems.map(item => (
-                            <div key={item.id} className="border rounded-lg p-3">
-                                {/* Item Name and Price */}
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex-1 min-w-0 pr-2">
-                                        <p className="font-medium text-sm truncate">{item.name}</p>
-                                        <p className="text-xs text-gray-600">₹{item.price} each</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-medium text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Quantity Controls */}
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-1">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                            className="w-8 h-8 p-0 text-xs"
-                                        >
-                                            -
-                                        </Button>
-                                        <span className="mx-2 font-medium min-w-[20px] text-center text-sm">
-                                            {item.quantity}
-                                        </span>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                            className="w-8 h-8 p-0 text-xs"
-                                        >
-                                            +
-                                        </Button>
-                                    </div>
-                                    <Button
-                                        size="sm"
-                                        variant="danger"
-                                        onClick={() => removeFromOrder(item.id)}
-                                        className="w-8 h-8 p-0 text-xs"
-                                    >
-                                        ×
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-
-                        {selectedItems.length === 0 && (
-                            <div className="text-center py-8">
-                                <p className="text-gray-500">No items added</p>
-                            </div>
-                        )}
-
-                        {selectedItems.length > 0 && (
-                            <>
-                                <hr className="my-4" />
-                                <div className="bg-gray-50 p-3 rounded-lg">
-                                    <div className="flex justify-between items-center font-bold text-lg">
-                                        <span>Total:</span>
-                                        <span className="text-green-600">₹{getTotalAmount()}</span>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-
-                        <Button
-                            className="w-full mt-4"
-                            variant="success"
-                            disabled={selectedItems.length === 0}
-                            onClick={handlePlaceOrder}
-                        >
-                            Place Order ({selectedItems.length} items)
-                        </Button>
-                    </div>
-                </Card>
-            </div>
-
-            {/* Right: Menu Items */}
-            <div className="lg:col-span-2 bg-white h-full overflow-y-auto p-4">
-                {/* Loading State */}
-                {isLoading && (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="text-gray-500">Loading products...</div>
-                    </div>
-                )}
-
-                {/* Error State */}
-                {error && (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="text-red-500 text-center">
-                            <p>{error}</p>
-                            <Button 
-                                onClick={() => window.location.reload()} 
-                                className="mt-2"
-                                size="sm"
-                            >
-                                Retry
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Menu Content */}
-                {!isLoading && !error && (
-                    <>
-                        {/* Filters */}
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-                            <input
-                                type="text"
-                                placeholder="Search items..."
-                                className="w-full md:w-1/2 p-2 border rounded-lg"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            <div className="flex gap-2 flex-wrap">
-                                <Button
-                                    variant={activeCategory === 'all' ? 'black' : 'secondary'}
-                                    onClick={() => setActiveCategory('all')}
-                                    size="sm"
-                                >All</Button>
-                                {categories.map(category => (
-                                    <Button
-                                        key={category}
-                                        variant={activeCategory === category ? 'black' : 'secondary'}
-                                        onClick={() => setActiveCategory(category)}
-                                        size="sm"
-                                    >
-                                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Menu Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredMenuItems.map(item => (
-                                <div key={item.id} className="border rounded-lg p-4 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
-                                    <img src={item.img} alt={item.name} className="w-24 h-24 object-cover mb-2 rounded" />
-                                    <h4 className="font-semibold">{item.name}</h4>
-                                    <p className="text-lg font-bold text-green-600 mb-1">₹{item.price}</p>
-                                    <p className="text-xs text-gray-500 mb-2">
-                                        {item.quantityAvailable} units available
-                                    </p>
-                                    <Button 
-                                        size="sm" 
-                                        onClick={() => addToOrder(item)}
-                                        disabled={item.quantityAvailable === 0}
-                                    >
-                                        {item.quantityAvailable === 0 ? 'Out of Stock' : 'Add to Order'}
-                                    </Button>
-                                </div>
-                            ))}
-                            {filteredMenuItems.length === 0 && (
-                                <p className="col-span-full text-center text-gray-500 py-8">No items found</p>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
-    )
-
     return (
-        <div className="min-h-screen bg-gray-50">
-            {currentPage === 'menu' ? <MenuPage /> : <PaymentPage />}
+        <div className="h-screen bg-gray-50 overflow-hidden">
+            {currentPage === 'menu' ? (
+                <MenuPage
+                    selectedItems={selectedItems}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    activeCategory={activeCategory}
+                    setActiveCategory={setActiveCategory}
+                    isLoading={isLoading}
+                    error={error}
+                    filteredMenuItems={filteredMenuItems}
+                    categories={categories}
+                    addToOrder={addToOrder}
+                    updateQuantity={updateQuantity}
+                    getTotalAmount={getTotalAmount}
+                    handlePlaceOrder={handlePlaceOrder}
+                />
+            ) : (
+                <PaymentPage
+                    currentOrder={currentOrder}
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
+                    isProcessingPayment={isProcessingPayment}
+                    handleBackToMenu={handleBackToMenu}
+                    handlePaymentComplete={handlePaymentComplete}
+                />
+            )}
 
             {/* Order Confirmation Modal */}
             <Modal
@@ -492,7 +527,7 @@ const ManualOrder = () => {
             >
                 <div className="space-y-4">
                     <p className="text-gray-600">Please confirm your order details:</p>
-                    <div className="bg-gray-50 p-3 rounded-lg max-h-48 overflow-y-auto">
+                    <div className="bg-gray-50 p-3 rounded-lg max-h-48 overflow-y-auto scrollbar-hide">
                         {selectedItems.map(item => (
                             <div key={item.id} className="flex justify-between py-1 text-sm">
                                 <span className="truncate pr-2">{item.name} × {item.quantity}</span>
@@ -514,4 +549,4 @@ const ManualOrder = () => {
     )
 }
 
-export default ManualOrder
+export default ManualOrder;
