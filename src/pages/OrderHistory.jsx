@@ -9,6 +9,7 @@ import { saveAs } from 'file-saver'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
 import { toast } from 'react-hot-toast'
+import Modal from '../components/ui/Modal'
 
 const OrderHistory = () => {
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf('day'))
@@ -19,6 +20,7 @@ const OrderHistory = () => {
     const [error, setError] = useState(null)
     const [datesError, setDatesError] = useState(null)
     const [datePickerValue, setDatePickerValue] = useState('')
+    const [selectedOrder, setSelectedOrder] = useState(null) // for modal
 
     const { outletId } = useOutletDetails()
 
@@ -124,20 +126,29 @@ const OrderHistory = () => {
     }
 
     // Transform orders data for table
-    const orderTableData = orders.map(order => ([
-        order.orderId,
-        order.customerName,
-        order.orderType,
-        dayjs(order.createdAt).format('hh:mm A'),
-        order.items.map(item => `${item.quantity}x ${item.name}`).join(', '),
-        <Badge
-            key={order.orderId}
-            variant={order.status.toLowerCase()}
-        >
-            {order.status}
-        </Badge>,
-        <Button key={`view-${order.orderId}`}>View</Button>
-    ]))
+    const orderTableData = orders.map(order => {
+        const itemDisplay =
+            order.items.length > 2
+                ? order.items
+                      .slice(0, 2)
+                      .map(item => `${item.quantity}x ${item.name}`)
+                      .join(', ') + ` +${order.items.length - 2} more`
+                : order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')
+
+        return [
+            order.orderId,
+            order.customerName,
+            order.orderType,
+            dayjs(order.createdAt).format('hh:mm A'),
+            itemDisplay,
+            <Badge key={order.orderId} variant={order.status.toLowerCase()}>
+                {order.status}
+            </Badge>,
+            <Button key={`view-${order.orderId}`} onClick={() => setSelectedOrder(order)}>
+                View
+            </Button>
+        ]
+    })
 
     return (
         <div className="space-y-6">
@@ -148,16 +159,18 @@ const OrderHistory = () => {
                     <div className="flex overflow-x-auto whitespace-nowrap gap-2 pb-2 scrollbar-hide">
                         {datesLoading && <p>Loading dates...</p>}
                         {datesError && <p className="text-red-600">{datesError}</p>}
-                        {!datesLoading && !datesError && availableDates.map(date => (
-                            <Button
-                                key={date.toISOString()}
-                                variant={selectedDate.isSame(date, 'day') ? 'black' : 'secondary'}
-                                onClick={() => setSelectedDate(date)}
-                                className="flex-shrink-0"
-                            >
-                                {date.format('DD MMM')}
-                            </Button>
-                        ))}
+                        {!datesLoading &&
+                            !datesError &&
+                            availableDates.map(date => (
+                                <Button
+                                    key={date.toISOString()}
+                                    variant={selectedDate.isSame(date, 'day') ? 'black' : 'secondary'}
+                                    onClick={() => setSelectedDate(date)}
+                                    className="flex-shrink-0"
+                                >
+                                    {date.format('DD MMM')}
+                                </Button>
+                            ))}
                     </div>
                 </div>
 
@@ -195,7 +208,15 @@ const OrderHistory = () => {
 
                     {!loading && !error && (
                         <Table
-                            headers={['Order ID', 'Customer Name', 'Order Type', 'Time', 'Items', 'Status', 'Action']}
+                            headers={[
+                                'Order ID',
+                                'Customer Name',
+                                'Order Type',
+                                'Time',
+                                'Items',
+                                'Status',
+                                'Action'
+                            ]}
                             data={orderTableData}
                         />
                     )}
@@ -207,6 +228,49 @@ const OrderHistory = () => {
                     )}
                 </div>
             </Card>
+
+            {/* Order Details Modal */}
+            <Modal
+                isOpen={!!selectedOrder}
+                onClose={() => setSelectedOrder(null)}
+                title={`Order Details - ${selectedOrder?.orderId || ''}`}
+                footer={
+                    <Button variant="secondary" onClick={() => setSelectedOrder(null)}>
+                        Close
+                    </Button>
+                }
+            >
+                {selectedOrder && (
+                    <div className="space-y-4">
+                        <p>
+                            <strong>Customer:</strong> {selectedOrder.customerName}
+                        </p>
+                        <p>
+                            <strong>Order Type:</strong> {selectedOrder.orderType}
+                        </p>
+                        <p>
+                            <strong>Time:</strong>{' '}
+                            {dayjs(selectedOrder.createdAt).format('DD MMM YYYY, hh:mm A')}
+                        </p>
+                        <p>
+                            <strong>Status:</strong>{' '}
+                            <Badge variant={selectedOrder.status.toLowerCase()}>
+                                {selectedOrder.status}
+                            </Badge>
+                        </p>
+                        <div>
+                            <strong>Items:</strong>
+                            <ul className="list-disc pl-5 mt-2 space-y-1">
+                                {selectedOrder.items.map((item, idx) => (
+                                    <li key={idx}>
+                                        {item.quantity}x {item.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     )
 }

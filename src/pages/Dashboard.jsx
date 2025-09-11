@@ -165,15 +165,29 @@ const Dashboard = () => {
     }
 
     // Transform filtered orders for table display
-    const recentOrders = filteredOrders.map(order => ([
-        order.id,
-        order.customer,
-        order.items,
-        order.time,
-        <Badge variant={getStatusVariant(order.status)} key={order.billNumber}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
-        </Badge>
-    ]))
+    const recentOrders = filteredOrders.map(order => {
+        const displayLimit = 2; // Show up to 2 items
+        const items = order.originalItems || [];
+        let itemsDisplay;
+
+        if (items.length > displayLimit) {
+            const shownItems = items.slice(0, displayLimit).map(item => `${item.name} (${item.quantity})`).join(', ');
+            const remainingCount = items.length - displayLimit;
+            itemsDisplay = `${shownItems}, +${remainingCount} more`;
+        } else {
+            itemsDisplay = items.map(item => `${item.name} (${item.quantity})`).join(', ');
+        }
+
+        return [
+            order.id,
+            order.customer,
+            itemsDisplay,
+            order.time,
+            <Badge variant={getStatusVariant(order.status)} key={order.billNumber}>
+                {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
+            </Badge>
+        ];
+    });
 
     const handleButtonClick = (value) => {
         if (value === 'clear') {
