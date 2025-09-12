@@ -1,10 +1,12 @@
 import React, { useContext } from 'react'
 import { Search, Bell, User, Menu } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
+import { useOutletDetails } from '../utils/outletUtils'
 import logo from '../assets/logo.png'
 
 const Header = ({ onMenuClick }) => {
     const { user, signOut } = useContext(AuthContext)
+    const { outletName } = useOutletDetails()
 
     // !  Extract email from the (context) instaed of the name as of now 
     const userName = user?.email?.split('@')[0] || 'Guest'
@@ -23,27 +25,22 @@ const Header = ({ onMenuClick }) => {
                     </button>
                     <img src={logo} alt="logo" className="h-8 w-auto" />
 
-                    {/* Left Section  - SearchBar */}
+                    {/* Outlet Name Display */}
                     <div className="flex-1 max-w-md mx-4">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                placeholder="Search orders, customers..."
-                            />
+                        <div className="text-center">
+                            <h1 className="text-lg font-semibold text-gray-800">
+                                {outletName || 'Loading...'}
+                            </h1>
                         </div>
                     </div>
 
                     {/* Right Section */}
                     <div className="flex items-center space-x-2 sm:space-x-4">
                         {/* Notifications */}
-                        <button className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
+                        {/* <button className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full">
                             <Bell className="h-5 w-5 sm:h-6 sm:w-6" />
                             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
-                        </button>
+                        </button> */}
 
                         {/* Profile */}
                         <div className="flex items-center space-x-2 sm:space-x-3">
