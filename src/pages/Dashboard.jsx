@@ -609,12 +609,12 @@ const Dashboard = () => {
                             </div>
                         ) : selectedOrder.loading ? (
                             <div>
-                                <div className="text-blue-400 text-4xl mb-2">⏳</div>
+                                {/* <div className="text-blue-400 text-4xl mb-2">⏳</div> */}
                                 <p className="text-blue-600">Loading order details...</p>
                             </div>
                         ) : selectedOrder.notFound ? (
                             <div className="bg-red-50 border border-red-200 p-6 rounded-lg text-center">
-                                <div className="text-red-400 text-4xl mb-2">❌</div>
+                                {/* <div className="text-red-400 text-4xl mb-2">❌</div> */}
                                 <p className="text-red-600 font-semibold">Order Not Found</p>
                                 <p className="text-red-500 text-sm mt-1">Please check the Order ID and try again</p>
                             </div>
@@ -667,7 +667,7 @@ const Dashboard = () => {
                                                 {/* Show completed order message */}
                                                 {isOrderCompleted() && (
                                                     <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                                                        <div className="text-green-500 text-3xl mb-2">✅</div>
+                                                        {/* <div className="text-green-500 text-3xl mb-2">✅</div> */}
                                                         <p className="text-green-700 font-medium text-lg">
                                                             This order has been {selectedOrder.status === 'delivered' ? 'delivered' : selectedOrder.status === 'cancelled' ? 'cancelled' : 'completed'} successfully!
                                                         </p>

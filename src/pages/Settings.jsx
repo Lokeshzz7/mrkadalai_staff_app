@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../components/ui/Button';
 import { apiRequest } from '../utils/api';
+import { toast } from 'react-hot-toast';
 
 const Settings = () => {
   const [user, setUser] = useState({
@@ -38,7 +39,7 @@ const Settings = () => {
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      alert('Failed to load profile data');
+      toast.error('Failed to load profile data');
     } finally {
       setLoading(false);
     }
@@ -74,10 +75,10 @@ const Settings = () => {
       
       setUser(response.profile);
       setIsEditing(false);
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile: ' + error.message);
+      toast.error('Failed to update profile: ' + error.message);
     } finally {
       setUpdating(false);
     }
@@ -89,13 +90,13 @@ const Settings = () => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      toast.error('File size must be less than 5MB');
       return;
     }
 
@@ -104,7 +105,6 @@ const Settings = () => {
       const formData = new FormData();
       formData.append('image', file);
 
-      // Use fetch directly for file upload instead of apiRequest
       const token = localStorage.getItem("token");
       const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500/api';
       
@@ -112,7 +112,6 @@ const Settings = () => {
         method: 'POST',
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
-          // Don't set Content-Type for FormData, let browser set it with boundary
         },
         credentials: 'include',
         body: formData
@@ -128,10 +127,10 @@ const Settings = () => {
         ...prev,
         imageUrl: data.imageUrl
       }));
-      alert('Image uploaded successfully!');
+      toast.success('Image uploaded successfully!');
     } catch (error) {
       console.error('Failed to upload image:', error);
-      alert('Failed to upload image: ' + error.message);
+      toast.error('Failed to upload image: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -139,7 +138,7 @@ const Settings = () => {
 
   const handleImageDelete = async () => {
     if (!user.imageUrl) {
-      alert('No image to delete');
+      toast.error('No image to delete');
       return;
     }
 
@@ -157,10 +156,10 @@ const Settings = () => {
         ...prev,
         imageUrl: null
       }));
-      alert('Image deleted successfully!');
+      toast.success('Image deleted successfully!');
     } catch (error) {
       console.error('Failed to delete image:', error);
-      alert('Failed to delete image: ' + error.message);
+      toast.error('Failed to delete image: ' + error.message);
     } finally {
       setUploading(false);
     }
