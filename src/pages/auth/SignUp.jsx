@@ -7,7 +7,6 @@ import Card from '../../components/ui/Card.jsx';
 import { ROUTES } from '../../utils/constants.js';
 import toast from 'react-hot-toast';
 
-
 const SignUp = () => {
     const [formData, setFormData] = useState({
         name: '',
@@ -109,101 +108,141 @@ const SignUp = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Create your account
+        <div 
+            className="min-h-screen w-full flex items-center justify-center p-4"
+            style={{
+                backgroundColor: 'black',
+                backgroundImage: `url('/src/assets/stbg.png')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}
+        >
+            <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-xl w-full max-w-md">
+                <div className="text-center">
+                    <img src="/src/assets/logo2.jpg" alt="Logo" className="mx-auto h-20 w-auto mb-4" />
+                    <h2 className="text-3xl font-bold text-gray-900 mb-8">
+                        Create Your Account
                     </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Or{' '}
-                        <Link
-                            to={ROUTES.SIGN_IN}
-                            className="font-medium text-blue-600 hover:text-blue-500"
-                        >
-                            sign in to your existing account
-                        </Link>
-                    </p>
                 </div>
 
-                <Card className="p-8">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                                {error}
-                            </div>
-                        )}
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                        <span className="block sm:inline">{error}</span>
+                    </div>
+                )}
 
-                        <Input
-                            label="Name"
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label htmlFor="name" className="text-sm font-semibold text-gray-700 block mb-1">
+                            Full Name
+                        </label>
+                        <input
+                            id="name"
                             name="name"
                             type="text"
                             autoComplete="name"
                             required
                             value={formData.name}
                             onChange={handleChange}
-                            error={formErrors.name}
-                            placeholder="Enter your name"
+                            placeholder="Enter your full name"
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.name ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200`}
                         />
+                        {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                    </div>
 
-                        <Input
-                            label="Email address"
+                    <div>
+                        <label htmlFor="email" className="text-sm font-semibold text-gray-700 block mb-1">
+                            Email Address
+                        </label>
+                        <input
+                            id="email"
                             name="email"
                             type="email"
                             autoComplete="email"
                             required
                             value={formData.email}
                             onChange={handleChange}
-                            error={formErrors.email}
                             placeholder="Enter your email"
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.email ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200`}
                         />
+                        {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                    </div>
 
-                        <Input
-                            label="Phone Number"
+                    <div>
+                        <label htmlFor="phone" className="text-sm font-semibold text-gray-700 block mb-1">
+                            Phone Number
+                        </label>
+                        <input
+                            id="phone"
                             name="phone"
                             type="tel"
                             autoComplete="tel"
                             required
                             value={formData.phone}
                             onChange={handleChange}
-                            error={formErrors.phone}
                             placeholder="Enter your phone number"
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.phone ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200`}
                         />
+                        {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                    </div>
 
-                        <Input
-                            label="Password"
+                    <div>
+                        <label htmlFor="password" className="text-sm font-semibold text-gray-700 block mb-1">
+                            Password
+                        </label>
+                        <input
+                            id="password"
                             name="password"
                             type="password"
                             autoComplete="new-password"
                             required
                             value={formData.password}
                             onChange={handleChange}
-                            error={formErrors.password}
-                            placeholder="Enter your password"
+                            placeholder="Create a password"
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.password ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200`}
                         />
+                        {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
+                    </div>
 
-                        <Input
-                            label="Confirm Password"
+                    <div>
+                        <label htmlFor="retypePassword" className="text-sm font-semibold text-gray-700 block mb-1">
+                            Confirm Password
+                        </label>
+                        <input
+                            id="retypePassword"
                             name="retypePassword"
                             type="password"
                             autoComplete="new-password"
                             required
                             value={formData.retypePassword}
                             onChange={handleChange}
-                            error={formErrors.retypePassword}
                             placeholder="Confirm your password"
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.retypePassword ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200`}
                         />
+                        {formErrors.retypePassword && <p className="text-red-500 text-xs mt-1">{formErrors.retypePassword}</p>}
+                    </div>
 
-                        <Button
+                    <div className="pt-4">
+                        <button
                             type="submit"
-                            className="w-full"
-                            loading={loading}
                             disabled={loading}
+                            className="w-full bg-yellow-500 text-black font-bold py-3 px-4 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-200 ease-in-out disabled:bg-yellow-300 disabled:cursor-not-allowed"
                         >
-                            Sign up
-                        </Button>
-                    </form>
-                </Card>
+                            {loading ? 'Creating Account...' : 'Sign Up'}
+                        </button>
+                    </div>
+                </form>
+
+                <p className="mt-8 text-center text-sm text-gray-600">
+                    Already have an account?{' '}
+                    <Link
+                        to={ROUTES.SIGN_IN}
+                        className="font-medium text-yellow-600 hover:text-yellow-500"
+                    >
+                        Sign In
+                    </Link>
+                </p>
             </div>
         </div>
     );
