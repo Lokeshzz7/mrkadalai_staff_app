@@ -167,7 +167,7 @@ const Wallet = () => {
             {/* Transactions Table */}
             <Card>
                 {loading ? (
-                    <div className="text-center py-8">
+                    <div className="flex justify-center items-center text-center py-8">
                         <Loader/>
                     </div>
                 ) : (
