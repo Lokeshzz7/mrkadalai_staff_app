@@ -6,6 +6,7 @@ import Modal from '../components/ui/Modal';
 import { apiRequest } from '../utils/api';
 import { useOutletDetails } from '../utils/outletUtils';
 import { toast } from 'react-hot-toast';
+import Loader from '../components/ui/Loader';
 
 // Helper Component for the Menu Page
 const MenuPage = ({
@@ -130,7 +131,7 @@ const MenuPage = ({
             <div className="flex-1 overflow-y-auto p-4 pt-4 scrollbar-hide">
                 {isLoading && (
                     <div className="flex justify-center items-center h-full">
-                        <div className="text-gray-500">Loading delicious items...</div>
+                        <Loader/>
                     </div>
                 )}
 

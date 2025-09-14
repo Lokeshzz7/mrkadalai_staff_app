@@ -10,6 +10,7 @@ import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
 import { toast } from 'react-hot-toast'
 import Modal from '../components/ui/Modal'
+import Loader from '../components/ui/Loader'
 
 const OrderHistory = () => {
     const [selectedDate, setSelectedDate] = useState(dayjs().startOf('day'))
@@ -195,8 +196,8 @@ const OrderHistory = () => {
             <Card>
                 <div className="overflow-x-auto">
                     {loading && (
-                        <div className="text-center py-4">
-                            <p>Loading orders...</p>
+                        <div className="flex justify-center items-center text-center py-4">
+                            <Loader/>
                         </div>
                     )}
 

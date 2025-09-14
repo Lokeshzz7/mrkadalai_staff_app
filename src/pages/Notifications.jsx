@@ -5,6 +5,7 @@ import Modal from '../components/ui/Modal';
 import { apiRequest } from '../utils/api';
 import { useOutletDetails } from '../utils/outletUtils';
 import { toast } from 'react-hot-toast';
+import Loader from '../components/ui/Loader';
 
 const Notifications = () => {
     // --- All your existing state and logic remains unchanged ---
@@ -211,7 +212,7 @@ const Notifications = () => {
 
             {activeTab === 'orders' && (
                 <div className="space-y-6">
-                    {ordersLoading && <div className="text-center py-4 text-gray-600">Loading orders...</div>}
+                    {ordersLoading && <div className="flex justify-center items-center text-center py-4 text-gray-600"><Loader/></div>}
                     
                     {!ordersLoading && allOrders.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
@@ -290,7 +291,7 @@ const Notifications = () => {
             {/* --- INVENTORY SECTION (UNCHANGED) --- */}
             {activeTab === 'inventory' && (
                 <div className="space-y-6">
-                    {loading && <div className="text-center py-4"><div className="text-gray-600">Loading inventory data...</div></div>}
+                    {loading && <div className="flex justify-center items-center text-center py-4"><Loader/></div>}
                     {!loading && (
                         <div className="max-h-[500px] overflow-y-auto pr-2" style={{ scrollBehavior: 'smooth', scrollbarWidth: 'thin', scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent' }}>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

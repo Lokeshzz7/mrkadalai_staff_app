@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from '../components/ui/Button';
 import { apiRequest } from '../utils/api';
 import { toast } from 'react-hot-toast';
+import Loader from '../components/ui/Loader';
 
 const Settings = () => {
   const [user, setUser] = useState({
@@ -170,7 +171,7 @@ const Settings = () => {
       <div className="p-6 space-y-8">
         <h2 className="text-2xl font-bold text-gray-800">Settings</h2>
         <div className="flex items-center justify-center py-8">
-          <div className="text-gray-600">Loading profile...</div>
+          <Loader/>
         </div>
       </div>
     );

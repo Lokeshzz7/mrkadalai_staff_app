@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import { apiRequest } from '../utils/api'
+import Loader from '../components/ui/Loader'
 
 const Reports = () => {
     const [loading, setLoading] = useState(false)
@@ -338,7 +339,7 @@ const Reports = () => {
                     <h1 className="text-4xl font-bold">Staff Reports</h1>
                 </div>
                 <div className="flex justify-center items-center h-64">
-                    <p className="text-gray-500">Loading reports data...</p>
+                    <Loader/>
                 </div>
             </div>
         )

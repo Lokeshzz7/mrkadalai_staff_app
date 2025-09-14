@@ -7,6 +7,7 @@ import Modal from '../components/ui/Modal'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
 import { toast } from 'react-hot-toast';
+import Loader from '../components/ui/Loader'
 
 
 const Wallet = () => {
@@ -167,7 +168,7 @@ const Wallet = () => {
             <Card>
                 {loading ? (
                     <div className="text-center py-8">
-                        <p>Loading recharge history...</p>
+                        <Loader/>
                     </div>
                 ) : (
                     <Table
