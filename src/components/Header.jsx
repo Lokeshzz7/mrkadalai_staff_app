@@ -3,7 +3,7 @@ import { Search, Bell, User, Menu } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { useOutletDetails } from '../utils/outletUtils'
 import { apiRequest } from '../utils/api'
-import logo from '../assets/logo.png'
+import logo from '../assets/logo3.png'
 
 const Header = ({ onMenuClick }) => {
     const { user } = useContext(AuthContext)
