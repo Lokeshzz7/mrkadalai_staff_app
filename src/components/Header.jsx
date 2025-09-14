@@ -1,15 +1,34 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { Search, Bell, User, Menu } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 import { useOutletDetails } from '../utils/outletUtils'
+import { apiRequest } from '../utils/api'
 import logo from '../assets/logo.png'
 
 const Header = ({ onMenuClick }) => {
-    const { user, signOut } = useContext(AuthContext)
+    const { user } = useContext(AuthContext)
     const { outletName } = useOutletDetails()
+    const [staffProfile, setStaffProfile] = useState(null);
 
-    // !  Extract email from the (context) instaed of the name as of now 
-    const userName = user?.email?.split('@')[0] || 'Guest'
+    useEffect(() => {
+        const fetchStaffProfile = async () => {
+            try {
+                // Fetch profile data from the backend
+                const data = await apiRequest('/staff/profile');
+                if (data && data.profile) {
+                    setStaffProfile(data.profile);
+                }
+            } catch (error) {
+                console.error("Failed to fetch staff profile:", error);
+            }
+        };
+
+        fetchStaffProfile();
+    }, []); // Empty dependency array ensures this runs only once on mount
+
+    // Use fetched name and designation, with fallbacks to original logic or defaults
+    const displayName = staffProfile?.name || user?.email?.split('@')[0] || 'Guest';
+    const designation = staffProfile?.designation || 'Restaurant Manager';
 
     return (
         <header className="bg-header shadow-sm border-b border-gray-200 sticky top-0 z-30">
@@ -45,13 +64,21 @@ const Header = ({ onMenuClick }) => {
                         {/* Profile */}
                         <div className="flex items-center space-x-2 sm:space-x-3">
                             <div className="flex-shrink-0">
-                                <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-theme flex items-center justify-center">
-                                    <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
-                                </div>
+                                {staffProfile?.imageUrl ? (
+                                    <img
+                                        className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover"
+                                        src={staffProfile.imageUrl}
+                                        alt="Profile"
+                                    />
+                                ) : (
+                                    <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-theme flex items-center justify-center">
+                                        <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                                    </div>
+                                )}
                             </div>
                             <div className="hidden sm:block">
-                                <div className="text-xs sm:text-sm font-medium text-gray-900">{userName}</div>
-                                <div className="text-xs text-gray-500">Restaurant Manager</div>
+                                <div className="text-xs sm:text-sm font-medium text-gray-900">{displayName}</div>
+                                <div className="text-xs text-gray-500">{designation}</div>
                             </div>
                         </div>
 
@@ -70,3 +97,4 @@ const Header = ({ onMenuClick }) => {
 }
 
 export default Header
+
