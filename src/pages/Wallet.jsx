@@ -155,13 +155,23 @@ const Wallet = () => {
             {/* Header Row: Recharge History + Search */}
             <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">Recharge History</h2>
-                <input
-                    type="text"
-                    placeholder="Search by ID or Name"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    className="border rounded p-2 w-64"
-                />
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        placeholder="Search by ID or Name"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className="border rounded p-2 w-64"
+                    />
+                    <Button
+                        variant="black"
+                        onClick={fetchRechargeHistory}
+                        disabled={loading}
+                        className="disabled:bg-gray-700"
+                    >
+                        {loading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                </div>
             </div>
 
             {/* Transactions Table */}

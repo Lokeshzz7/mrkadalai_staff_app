@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
 import { apiRequest } from '../utils/api'
 import { useOutletDetails } from '../utils/outletUtils'
+import Loader from '../components/ui/Loader'
 
 const Dashboard = () => {
     const [orderInput, setOrderInput] = useState('')
@@ -435,6 +436,11 @@ const Dashboard = () => {
         return amount.toLocaleString('en-IN')
     }
 
+    // Function to handle refresh logic in recent orders table
+    const handleRefresh = () => {
+        fetchRecentOrders(currentPage);
+    };
+
     const DeliverySlot = {
         SLOT_11_12: '11:00-12:00',
         SLOT_12_13: '12:00-13:00',
@@ -519,86 +525,57 @@ const Dashboard = () => {
             <div>
                 <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-6">
                     {/* Calculator Section */}
-                    <Card title='Order Look UP' >
-                        {/* Display Screen */}
-                        <div className="bg-gray-900 text-white p-4 rounded-lg mb-4">
-                            <input
-                                type="text"
-                                value={orderInput}
-                                onChange={handleInputChange}
-                                onKeyPress={handleKeyPress}
-                                placeholder="Enter Order ID"
-                                className="w-full bg-transparent text-2xl font-mono text-right border-none outline-none placeholder-gray-400"
-                                maxLength={10}
-                            />
-                        </div>
+<Card title='Order Look UP'>
+    {/* The display screen with your original dark styling */}
+    <div className="bg-gray-900 text-white p-4 rounded-lg mb-4">
+        <input
+            type="text"
+            value={orderInput}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            placeholder="Enter Order ID"
+            className="w-full bg-transparent text-2xl font-mono text-right border-none outline-none placeholder-gray-400"
+            maxLength={10}
+        />
+    </div>
 
-                        {/* Calculator Buttons */}
-                        <div className="grid grid-cols-4 gap-2">
-                            {/* First Row */}
-                            <button
-                                onClick={() => handleButtonClick('clear')}
-                                className="bg-red-500 hover:bg-red-600 text-white p-3 rounded font-semibold"
-                            >
-                                Clear
-                            </button>
-                            <button
-                                onClick={() => handleButtonClick('backspace')}
-                                className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded font-semibold"
-                            >
-                                ⌫
-                            </button>
-                            <button
-                                onClick={() => handleButtonClick('#')}
-                                className="bg-gray-500 hover:bg-gray-600 text-white p-3 rounded font-semibold text-xl"
-                            >
-                                #
-                            </button>
-                            <button
-                                onClick={() => handleButtonClick('search')}
-                                className="bg-green-500 hover:bg-green-600 text-white p-3 rounded font-semibold row-span-2"
-                            >
-                                Search
-                            </button>
+    {/* The keypad with your approved layout and original button colors */}
+    <div className="grid grid-cols-4 grid-rows-4 gap-2">
+        {/* --- Row 1 --- */}
+        <button onClick={() => handleButtonClick('7')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">7</button>
+        <button onClick={() => handleButtonClick('8')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">8</button>
+        <button onClick={() => handleButtonClick('9')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">9</button>
+        <button onClick={() => handleButtonClick('backspace')} className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded font-semibold text-xl">⌫</button>
 
-                            {/* Number Buttons */}
-                            {[7, 8, 9].map(num => (
-                                <button
-                                    key={num}
-                                    onClick={() => handleButtonClick(num.toString())}
-                                    className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
-                                >
-                                    {num}
-                                </button>
-                            ))}
+        {/* --- Row 2 --- */}
+        <button onClick={() => handleButtonClick('4')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">4</button>
+        <button onClick={() => handleButtonClick('5')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">5</button>
+        <button onClick={() => handleButtonClick('6')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">6</button>
+        <button onClick={() => handleButtonClick('clear')} className="bg-red-500 hover:bg-red-600 text-white p-3 rounded font-semibold">Clear</button>
 
-                            {[4, 5, 6].map(num => (
-                                <button
-                                    key={num}
-                                    onClick={() => handleButtonClick(num.toString())}
-                                    className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
-                                >
-                                    {num}
-                                </button>
-                            ))}
+        {/* --- Row 3 --- */}
+        <button onClick={() => handleButtonClick('1')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">1</button>
+        <button onClick={() => handleButtonClick('2')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">2</button>
+        <button onClick={() => handleButtonClick('3')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">3</button>
 
-                            {[0, 2, 3].map(num => (
-                                <button
-                                    key={num}
-                                    onClick={() => handleButtonClick(num.toString())}
-                                    className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
-                                >
-                                    {num}
-                                </button>
-                            ))}
-                            <button
-                                onClick={() => handleButtonClick('1')}
-                                className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
-                            >
-                                1
-                            </button>
-                        </div>
-                    </Card>
+        {/* Search button starts in row 3 and spans 2 rows down */}
+        <button
+            onClick={() => handleButtonClick('search')}
+            className="row-span-2 bg-green-500 hover:bg-green-600 text-white p-3 rounded font-semibold"
+        >
+            Search
+        </button>
+
+        {/* --- Row 4 --- */}
+        {/* Zero button starts in row 4 and spans 3 columns across */}
+        <button
+            onClick={() => handleButtonClick('0')}
+            className="col-span-3 bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
+        >
+            0
+        </button>
+    </div>
+</Card>
 
                     {/* Order Details Section */}
                     <Card title='Order Details' >
@@ -610,7 +587,7 @@ const Dashboard = () => {
                         ) : selectedOrder.loading ? (
                             <div>
                                 {/* <div className="text-blue-400 text-4xl mb-2">⏳</div> */}
-                                <p className="text-blue-600">Loading order details...</p>
+                                <p className='flex justify-center items-center'><Loader/></p>
                             </div>
                         ) : selectedOrder.notFound ? (
                             <div className="bg-red-50 border border-red-200 p-6 rounded-lg text-center">
@@ -817,13 +794,23 @@ const Dashboard = () => {
                 <Card>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Recent Orders</h2>
-                        <input
-                            type="text"
-                            placeholder="Search by ID or Customer..."
-                            className="border px-3 py-1 rounded"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                placeholder="Search by ID or Customer..."
+                                className="border px-3 py-1 rounded"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <Button
+                                variant="black"
+                                onClick={handleRefresh}
+                                disabled={loading}
+                                className="disabled:bg-gray-700"
+                            >
+                                {loading ? 'Refreshing...' : 'Refresh'}
+                            </Button>
+                        </div>
                     </div>
 
                     {loading ? (

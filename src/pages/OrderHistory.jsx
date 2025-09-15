@@ -88,6 +88,14 @@ const OrderHistory = () => {
         }
     }
 
+    // Wrapper function to handle refresh button click
+    const handleRefresh = () => {
+        // Re-fetches orders for the currently selected date
+        if (selectedDate && outletId) {
+            fetchOrders(selectedDate);
+        }
+    };
+
     const downloadExcel = async () => {
         try {
             const response = await apiRequest(
@@ -126,6 +134,7 @@ const OrderHistory = () => {
         }
     }
 
+
     // Transform orders data for table
     const orderTableData = orders.map(order => {
         const itemDisplay =
@@ -153,8 +162,17 @@ const OrderHistory = () => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold">Order History</h1>
-
+            <div className="flex justify-between items-center flex-wrap gap-2">
+                <h1 className="text-2xl font-bold">Order History</h1>
+            <Button
+                        variant="secondary"
+                        onClick={downloadExcel}
+                        disabled={loading || orders.length === 0}
+                    >
+                        Download Excel
+            </Button>
+            </div>
+            
             <div className="flex justify-between items-center flex-wrap gap-2">
                 <div className="flex-1 min-w-0">
                     <div className="flex overflow-x-auto whitespace-nowrap gap-2 pb-2 scrollbar-hide">
@@ -174,7 +192,6 @@ const OrderHistory = () => {
                             ))}
                     </div>
                 </div>
-
                 <div className="flex gap-2 items-center flex-shrink-0">
                     <label className="text-sm font-medium text-gray-700">Select Date:</label>
                     <input
@@ -184,11 +201,12 @@ const OrderHistory = () => {
                         className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <Button
-                        variant="secondary"
-                        onClick={downloadExcel}
-                        disabled={loading || orders.length === 0}
+                        variant="black"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="disabled:bg-gray-700"
                     >
-                        Download Excel
+                        {loading ? 'Refreshing...' : 'Refresh'}
                     </Button>
                 </div>
             </div>

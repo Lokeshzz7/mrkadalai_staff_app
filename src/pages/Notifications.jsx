@@ -196,6 +196,16 @@ const Notifications = () => {
         }
     };
 
+    // --- Function to handle refresh logic---
+    const handleRefresh = () => {
+        if (activeTab === 'orders') {
+            fetchRecentOrders();
+        } else if (activeTab === 'inventory') {
+            fetchStocks();
+        }
+    };
+    
+
     return (
         <div className="space-y-6 p-6">
             {(error || ordersError) && (
@@ -203,7 +213,18 @@ const Notifications = () => {
             )}
 
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">{activeTab === 'orders' ? 'App Orders List' : 'Inventory'}</h2>
+                <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                       {activeTab === 'orders' ? 'App Orders List' : 'Inventory'}
+                    </h2>
+                    <Button
+                        variant="black"
+                       onClick={handleRefresh}
+                        disabled={loading || ordersLoading}
+                    >
+                        {loading || ordersLoading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                </div>
                 <div className="flex space-x-4">
                     <Button variant={activeTab === 'orders' ? 'black' : 'secondary'} onClick={() => setActiveTab('orders')}>Orders</Button>
                     <Button variant={activeTab === 'inventory' ? 'black' : 'secondary'} onClick={() => setActiveTab('inventory')}>Inventory</Button>
