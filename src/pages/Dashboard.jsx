@@ -463,63 +463,63 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold text-gray-800">Overview</h2>
             </div>
             
-            {/* Stats Cards */}
+            {/* Stats Cards with Enhanced Styling */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Total Revenue</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Total Revenue</p>
                     <h2 className="text-2xl font-bold text-blue-600">
                         {homeDataLoading ? '...' : `₹${formatCurrency(homeData.totalRevenue)}`}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Manual Orders</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Manual Orders</p>
                     <h2 className="text-2xl font-bold text-green-600">
                         {homeDataLoading ? '...' : homeData.manualOrders}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">App Orders</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">App Orders</p>
                     <h2 className="text-2xl font-bold text-orange-600">
                         {homeDataLoading ? '...' : homeData.appOrders}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Wallet Recharges</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Wallet Recharges</p>
                     <h2 className="text-2xl font-bold text-yellow-600">
                         {homeDataLoading ? '...' : `₹${formatCurrency(homeData.totalRechargedAmount)}`}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Low Stock Items</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Low Stock Items</p>
                     <h2 className="text-2xl font-bold text-red-600">
                         {homeDataLoading ? '...' : homeData.lowStockProducts.length}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Tickets Raised</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Tickets Raised</p>
                     <h2 className="text-2xl font-bold text-purple-600">
                         {homeDataLoading ? '...' : homeData.ticketsCount}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Best Seller</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Best Seller</p>
                     <h2 className="text-2xl font-bold text-pink-600">
                         {homeDataLoading ? '...' : (homeData.bestSellerProduct?.name || 'N/A')}
                     </h2>
-                </Card>
+                </div>
                 
-                <Card Black className="text-center">
-                    <p className="text-gray-600">Peak Order Time</p>
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                    <p className="text-gray-600 text-sm font-medium mb-2">Peak Order Time</p>
                     <h2 className="text-2xl font-bold text-cyan-600">
                         {homeDataLoading ? '...' : formatPeakSlot(homeData.peakSlot)}
                     </h2>
-                </Card>
+                </div>
             </div>
 
             <div>
