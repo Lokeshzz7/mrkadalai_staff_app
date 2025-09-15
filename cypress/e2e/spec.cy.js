@@ -1,6 +1,5 @@
 describe('template spec', () => {
   beforeEach(() => {
-    // Visit the base URL before each test in this suite.
     cy.visit('/signin');
   });
   it('correct password and username', () => {
@@ -9,16 +8,19 @@ describe('template spec', () => {
     cy.get('button[type="submit"]').contains('Sign in').should('be.enabled');
     cy.get("[type='submit']").click()
   })
+
   it('wrong password', () => {
     cy.get('[name="email"]').type('pavan@gmail.com')
     cy.get('[name="password"]').type('pavana123')
     cy.get("[type='submit']").click()
   })
+
   it('wrong username', () => {
     cy.get('[name="email"]').type('pavana@gmail.com')
     cy.get('[name="password"]').type('pavan123')
     cy.get("[type='submit']").click()
   })
+
   it('should display all main structural elements',()=>{
     cy.get('.mt-6.text-center.text-3xl.font-extrabold.text-gray-900').contains("Sign in to your account")
     cy.get('a').contains('create a new account').should('be.visible');
@@ -30,10 +32,7 @@ describe('template spec', () => {
   });
 
   it('should navigate to the sign-up page when the link is clicked', () => {
-        // Find the "create a new account" link and click it.
         cy.get('a').contains('create a new account').click();
-
-        // Assert that the URL has changed to the sign-up page.
         cy.url().should('include', '/signup');
     });
 
