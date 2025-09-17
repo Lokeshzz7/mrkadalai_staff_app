@@ -12,6 +12,7 @@ const Dashboard = () => {
     const [orderInput, setOrderInput] = useState('')
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [statusFilter, setStatusFilter] = useState('') // New status filter state
     const [orders, setOrders] = useState([]) // Orders for the current page
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -147,11 +148,15 @@ const Dashboard = () => {
         fetchRecentOrders(currentPage)
     }, [outletId, currentPage])
 
-    // Filter orders based on search query
-    const filteredOrders = orders.filter(order =>
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    // Filter orders based on search query and status filter
+    const filteredOrders = orders.filter(order => {
+        const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.customer.toLowerCase().includes(searchQuery.toLowerCase())
+        
+        const matchesStatus = statusFilter === '' || order.status === statusFilter.toLowerCase()
+        
+        return matchesSearch && matchesStatus
+    })
 
     const getStatusVariant = (status) => {
         switch (status) {
@@ -802,6 +807,17 @@ const Dashboard = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="border px-3 py-1 rounded"
+                            >
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="partially_delivered">Partially Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
                             <Button
                                 variant="black"
                                 onClick={handleRefresh}
@@ -815,7 +831,7 @@ const Dashboard = () => {
 
                     {loading ? (
                         <div className="text-center py-8">
-                            <p className="text-gray-500">Loading recent orders...</p>
+                            <p className="flex justify-center items-center"><Loader/></p>
                         </div>
                     ) : error ? (
                         <div className="text-center py-8">
@@ -824,7 +840,7 @@ const Dashboard = () => {
                     ) : recentOrders.length === 0 ? (
                         <div className="text-center py-8">
                             <p className="text-gray-500">
-                                {searchQuery ? 'No orders found matching your search.' : 'No recent orders found.'}
+                                {searchQuery || statusFilter ? 'No orders found matching your search/filter.' : 'No recent orders found.'}
                             </p>
                         </div>
                     ) : (
