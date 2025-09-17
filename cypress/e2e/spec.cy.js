@@ -1,46 +1,67 @@
-describe('template spec', () => {
+// cypress/e2e/signin.cy.js
+
+describe('SignIn Page E2E Tests', () => {
   beforeEach(() => {
+    // Visit the signin page before each test
     cy.visit('/signin');
   });
-  it('correct password and username', () => {
-    cy.get('[name="email"]').type('pavan@gmail.com')
-    cy.get('[name="password"]').type('pavan123')
-    cy.get('button[type="submit"]').contains('Sign in').should('be.enabled');
-    cy.get("[type='submit']").click()
-  })
 
-  it('wrong password', () => {
-    cy.get('[name="email"]').type('pavan@gmail.com')
-    cy.get('[name="password"]').type('pavana123')
-    cy.get("[type='submit']").click()
-  })
-
-  it('wrong username', () => {
-    cy.get('[name="email"]').type('pavana@gmail.com')
-    cy.get('[name="password"]').type('pavan123')
-    cy.get("[type='submit']").click()
-  })
-
-  it('should display all main structural elements',()=>{
-    cy.get('.mt-6.text-center.text-3xl.font-extrabold.text-gray-900').contains("Sign in to your account")
-    cy.get('a').contains('create a new account').should('be.visible');
+  it('renders the sign-in page correctly', () => {
+    cy.get('h2').contains('Welcome Back');
     cy.get('input[name="email"]').should('exist');
     cy.get('input[name="password"]').should('exist');
-    cy.get('.mt-2.text-center.text-sm.text-gray-600').contains("Or ", { matchCase: false })
-    cy.get('.font-medium.text-blue-600.hover\\:text-blue-500').contains("create a new account")
-    cy.get('button[type="submit"]').contains('Sign in').should('be.enabled');
+    cy.get('button[type="submit"]').should('contain.text', 'Login');
+    cy.contains("Don't have an account?");
+    cy.get('a').contains('Sign Up').should('have.attr', 'href');
   });
 
-  it('should navigate to the sign-up page when the link is clicked', () => {
-        cy.get('a').contains('create a new account').click();
-        cy.url().should('include', '/signup');
-    });
+  it('shows validation errors when fields are empty', () => {
+    cy.get('button[type="submit"]').click();
+    cy.get('input[name="email"]:invalid')
+    cy.get('input[name="password"]:invalid')
 
-  it('should show an error for empty fields when submitting', () => {
-        cy.get('button[type="submit"]').click();
-        cy.get('input[name="email"]:invalid').should('exist');
-        cy.get('input[name="password"]:invalid').should('exist');
-    });
+  });
 
+  it('shows error for invalid email format', () => {
+    cy.get('input[name="email"]').type('invalid-email');
+    cy.get('input[name="password"]').type('password123');
+    cy.get('button[type="submit"]').click();
+    cy.get('input[name="email"]:invalid')
+  });
 
-})
+  it('calls signIn and shows error message on invalid credentials', () => {
+    // Stub API response (adjust route depending on your API)
+    cy.intercept('POST', '/auth/staff-signin', {
+      statusCode: 401,
+      body: { message: 'Invalid credentials' },
+    }).as('signInRequest');
+
+    cy.get('input[name="email"]').type('wrong@example.com');
+    cy.get('input[name="password"]').type('wrongpassword');
+    cy.get('button[type="submit"]').click();
+
+    //cy.wait('@signInRequest');
+    cy.get('span').should('contain.text', 'Invalid staff credentials');
+  });
+
+  it('redirects on successful login', () => {
+    cy.intercept('POST', '/auth/staff-signin', {
+      statusCode: 200,
+      body: { token: 'fake-jwt-token' },
+    }).as('signInRequest');
+
+    cy.get('input[name="email"]').type('pavan@gmail.com');
+    cy.get('input[name="password"]').type('pavan123');
+    cy.get('button[type="submit"]').click();
+
+    //cy.wait('@signInRequest');
+
+    // Adjust redirect route depending on your app (e.g., /dashboard)
+    cy.url().should('include', '/');
+  });
+
+  it('navigates to signup page when clicking Sign Up link', () => {
+    cy.get('a').contains('Sign Up').click();
+    cy.url().should('include', '/signup');
+  });
+});

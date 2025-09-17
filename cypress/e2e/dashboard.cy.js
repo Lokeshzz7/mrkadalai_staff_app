@@ -1,7 +1,11 @@
-/// <reference types="cypress" />
-
 describe('Dashboard Component Tests', () => {
     // Mock data for the API responses
+    const validData = {
+        name: 'John Doe',
+        email: 'johndoe@example.com',
+        phone: '1234567890',
+        password: 'password123',
+    };
     const homeDataMock = {
         totalRevenue: 55200,
         appOrders: 150,
@@ -28,7 +32,7 @@ describe('Dashboard Component Tests', () => {
                 orderType: 'App', paymentMode: 'Wallet', createdAt: '2025-09-15T10:10:00Z'
             },
             {
-                billNumber: '1004', customerName: 'Dan', items: [{ name: 'Sushi', quantity: 1 }], status: 'pending',
+        billNumber: '1004', customerName: 'Dan', items: [{ name: 'Sushi', quantity: 1 }], status: 'pending',
                 orderType: 'Manual', paymentMode: 'Cash', createdAt: '2025-09-15T10:15:00Z'
             },
             {
@@ -57,9 +61,9 @@ describe('Dashboard Component Tests', () => {
 
     beforeEach(() => {
         // Intercept all API calls with our mock data
-        cy.intercept('GET', '/staff/outlets/get-home-data/', homeDataMock).as('getHomeData');
-        cy.intercept('GET', '/staff/tickets/count/', { count: 5 }).as('getTicketsCount');
-        cy.intercept('GET', '/staff/outlets/get-recent-orders/*', recentOrdersMock).as('getRecentOrders');
+        cy.intercept('GET', 'http://51.21.198.214:5500/api/staff/outlets/get-home-data/', homeDataMock).as('getHomeData');
+        cy.intercept('GET', 'http://51.21.198.214:5500/api/staff/tickets/count/', { count: 5 }).as('getTicketsCount');
+        cy.intercept('GET', 'http://51.21.198.214:5500/api/staff/outlets/get-recent-orders/1/?page=1&limit=10', recentOrdersMock).as('getRecentOrders');
         cy.intercept('GET', '/staff/outlets/get-order/outlet-1002', { statusCode: 200, body: searchOrderMock.order }).as('searchOrderSuccess');
         cy.intercept('GET', '/staff/outlets/get-order/outlet-9999', { statusCode: 404, body: { message: 'Order not found' } }).as('searchOrderNotFound');
         cy.intercept('PUT', '/staff/outlets/update-order/', { statusCode: 200, body: { message: 'Order updated successfully' } }).as('updateOrder');
@@ -69,60 +73,17 @@ describe('Dashboard Component Tests', () => {
             cy.stub(win, 'useOutletDetails').returns({ outletId: 'outlet-1002' });
         });
 
-        cy.visit('/dashboard');
+        cy.visit('/signin');
+        cy.get('input[name="email"]').type(validData.email);
+        cy.get('input[name="password"]').type(validData.password);
+        cy.get('button[type="submit"]').click();
         cy.wait(['@getHomeData', '@getRecentOrders']);
     });
 
     // --- 1. UI and Data Display Tests ---
     it('should display the main dashboard sections and stats', () => {
         cy.get('h2').contains('Overview').should('be.visible');
-        cy.getit('@updateOrder').its('request.body').should('deep.include', {
-            orderId: 1002,
-            outletId: 'outlet-1002',
-            status: 'DELIVERED',
-            orderItemIds: [1, 2]
-        });
-
-        // Verify the UI reflects the change (re-fetches the data and shows a completed message)
-        cy.get('.bg-green-50').contains('This order has been delivered successfully!').should('be.visible');
-    });
-
-    // --- 3. Pagination & Search Tests ---
-    it('should filter recent orders by search query', () => {
-        cy.get('input[placeholder="Search by ID or Customer..."]').type('Bob');
-        cy.get('tbody tr').should('have.length', 1);
-        cy.get('tbody tr').first().find('td').eq(1).should('contain.text', 'Bob');
-
-        cy.get('input[placeholder="Search by ID or Customer..."]').clear().type('1003');
-        cy.get('tbody tr').should('have.length', 1);
-        cy.get('tbody tr').first().find('td').eq(0).should('contain.text', '#1003');
-    });
-
-    it('should navigate to the next and previous pages', () => {
-        // Mock a response for page 2
-        cy.intercept('GET', '/staff/outlets/get-recent-orders/?page=2&limit=10', {
-            orders: [{
-                billNumber: '1006', customerName: 'Frank', items: [{ name: 'Sandwich', quantity: 1 }], status: 'pending',
-                orderType: 'App', paymentMode: 'Cash', createdAt: '2025-09-15T11:00:00Z'
-            }],
-            total: 6,
-            currentPage: 2
-        }).as('getPage2');
-        
-        // Wait for the button to be enabled before clicking.
-        cy.get('button').contains('>').should('be.enabled').click();
-        cy.wait('@getPage2');
-        cy.get('span').contains('Page 2 of 2').should('be.visible'); 
-        cy.get('tbody tr').should('have.length', 1);
-        cy.get('tbody tr').first().find('td').first().should('contain.text', '#1006');
-        
-        // Go back to the first page
-        cy.get('button').contains('<').should('be.enabled').click();
-        cy.wait('@getRecentOrders');
-        cy.get('tbody tr').should('have.length', 5);
-        cy.get('span').contains('Page 1 of 2').should('be.visible');
-    });
-});('h2').contains('Recent Orders').should('be.visible');
+        cy.get('h2').contains('Recent Orders').should('be.visible');
 
         // Verify stat cards
         cy.get('h2').contains('₹55,200').should('be.visible');
@@ -189,4 +150,41 @@ describe('Dashboard Component Tests', () => {
         // Verify the UI reflects the change (re-fetches the data and shows a completed message)
         cy.get('.bg-green-50').contains('This order has been delivered successfully!').should('be.visible');
     });
+
+    // --- 3. Pagination & Search Tests ---
+    it('should filter recent orders by search query', () => {
+        cy.get('input[placeholder="Search by ID or Customer..."]').type('Bob');
+        cy.get('tbody tr').should('have.length', 1);
+        cy.get('tbody tr').first().find('td').eq(1).should('contain.text', 'Bob');
+
+        cy.get('input[placeholder="Search by ID or Customer..."]').clear().type('1003');
+        cy.get('tbody tr').should('have.length', 1);
+        cy.get('tbody tr').first().find('td').eq(0).should('contain.text', '#1003');
+    });
+
+    it('should navigate to the next and previous pages', () => {
+        // Mock a response for page 2
+        cy.intercept('GET', '/staff/outlets/get-recent-orders/?page=2&limit=10', {
+            orders: [{
+                billNumber: '1006', customerName: 'Frank', items: [{ name: 'Sandwich', quantity: 1 }], status: 'pending',
+                orderType: 'App', paymentMode: 'Cash', createdAt: '2025-09-15T11:00:00Z'
+            }],
+            total: 6,
+            currentPage: 2
+        }).as('getPage2');
+        
+        // Wait for the button to be enabled before clicking.
+        cy.get('button').contains('>').should('be.enabled').click();
+        cy.wait('@getPage2');
+        cy.get('span').contains('Page 2 of 2').should('be.visible'); 
+        cy.get('tbody tr').should('have.length', 1);
+        cy.get('tbody tr').first().find('td').first().should('contain.text', '#1006');
+        
+        // Go back to the first page
+        cy.get('button').contains('<').should('be.enabled').click();
+        cy.wait('@getRecentOrders');
+        cy.get('tbody tr').should('have.length', 5);
+        cy.get('span').contains('Page 1 of 2').should('be.visible');
+    });
 });
+
