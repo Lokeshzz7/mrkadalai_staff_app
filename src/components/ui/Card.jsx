@@ -5,7 +5,7 @@ const Card = ({ children, className = '', title, Black = false, ...props }) => {
     
     return (
         <div 
-            className={`bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-6 ${border} ${className}`} 
+            className={`bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-6 border ${border} ${className}`} 
             {...props}
         >
             {title && (

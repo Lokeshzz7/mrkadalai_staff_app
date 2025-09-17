@@ -259,12 +259,12 @@ const Inventory = () => {
 
             {/* Filters */}
             {activeTab === 'stock' && (
-                <div className="flex justify-between items-center flex-wrap">
+                <div className="flex justify-between items-center flex-wrap gap-4">
                     <div className="flex items-center gap-2">
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="p-2 border rounded"
+                            className="bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-gray-400 shadow-sm transition duration-150 ease-in-out"
                         >
                             <option value="All">All Categories</option>
                             <option value="Meals">Meals</option>
@@ -277,17 +277,16 @@ const Inventory = () => {
                     <div className="flex items-center gap-2">
                         <input
                             type="text"
-                            placeholder="Search item"
+                            placeholder="Search by item name..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="p-2 border rounded"
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm transition duration-150 ease-in-out"
                         />
                         <Button variant="black" onClick={fetchStocks} disabled={loading}>
                             {loading ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </div>
                 </div>
-
             )}
 
             {activeTab === 'activity' && (

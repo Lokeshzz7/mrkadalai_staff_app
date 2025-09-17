@@ -465,117 +465,117 @@ const Dashboard = () => {
             
             {/* Stats Cards with Enhanced Styling */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Total Revenue</p>
                     <h2 className="text-2xl font-bold text-blue-600">
                         {homeDataLoading ? '...' : `₹${formatCurrency(homeData.totalRevenue)}`}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Manual Orders</p>
                     <h2 className="text-2xl font-bold text-green-600">
                         {homeDataLoading ? '...' : homeData.manualOrders}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">App Orders</p>
                     <h2 className="text-2xl font-bold text-orange-600">
                         {homeDataLoading ? '...' : homeData.appOrders}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Wallet Recharges</p>
                     <h2 className="text-2xl font-bold text-yellow-600">
                         {homeDataLoading ? '...' : `₹${formatCurrency(homeData.totalRechargedAmount)}`}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Low Stock Items</p>
                     <h2 className="text-2xl font-bold text-red-600">
                         {homeDataLoading ? '...' : homeData.lowStockProducts.length}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Tickets Raised</p>
                     <h2 className="text-2xl font-bold text-purple-600">
                         {homeDataLoading ? '...' : homeData.ticketsCount}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Best Seller</p>
                     <h2 className="text-2xl font-bold text-pink-600">
                         {homeDataLoading ? '...' : (homeData.bestSellerProduct?.name || 'N/A')}
                     </h2>
-                </div>
+                </Card>
                 
-                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-100 text-center">
+                <Card className="text-center">
                     <p className="text-gray-600 text-sm font-medium mb-2">Peak Order Time</p>
                     <h2 className="text-2xl font-bold text-cyan-600">
                         {homeDataLoading ? '...' : formatPeakSlot(homeData.peakSlot)}
                     </h2>
-                </div>
+                </Card>
             </div>
 
             <div>
                 <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-6">
                     {/* Calculator Section */}
-<Card title='Order Look UP'>
-    {/* The display screen with your original dark styling */}
-    <div className="bg-gray-900 text-white p-4 rounded-lg mb-4">
-        <input
-            type="text"
-            value={orderInput}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder="Enter Order ID"
-            className="w-full bg-transparent text-2xl font-mono text-right border-none outline-none placeholder-gray-400"
-            maxLength={10}
-        />
-    </div>
+                    <Card title='Order Look UP'>
+                        {/* The display screen with your original dark styling */}
+                        <div className="bg-gray-900 text-white p-4 rounded-lg mb-4">
+                            <input
+                                type="text"
+                                value={orderInput}
+                                onChange={handleInputChange}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Enter Order ID"
+                                className="w-full bg-transparent text-2xl font-mono text-right border-none outline-none placeholder-gray-400"
+                                maxLength={10}
+                            />
+                        </div>
 
-    {/* The keypad with your approved layout and original button colors */}
-    <div className="grid grid-cols-4 grid-rows-4 gap-2">
-        {/* --- Row 1 --- */}
-        <button onClick={() => handleButtonClick('7')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">7</button>
-        <button onClick={() => handleButtonClick('8')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">8</button>
-        <button onClick={() => handleButtonClick('9')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">9</button>
-        <button onClick={() => handleButtonClick('backspace')} className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded font-semibold text-xl">⌫</button>
+                        {/* The keypad with your approved layout and original button colors */}
+                        <div className="grid grid-cols-4 grid-rows-4 gap-2">
+                            {/* --- Row 1 --- */}
+                            <button onClick={() => handleButtonClick('7')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">7</button>
+                            <button onClick={() => handleButtonClick('8')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">8</button>
+                            <button onClick={() => handleButtonClick('9')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">9</button>
+                            <button onClick={() => handleButtonClick('backspace')} className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded font-semibold text-xl">⌫</button>
 
-        {/* --- Row 2 --- */}
-        <button onClick={() => handleButtonClick('4')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">4</button>
-        <button onClick={() => handleButtonClick('5')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">5</button>
-        <button onClick={() => handleButtonClick('6')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">6</button>
-        <button onClick={() => handleButtonClick('clear')} className="bg-red-500 hover:bg-red-600 text-white p-3 rounded font-semibold">Clear</button>
+                            {/* --- Row 2 --- */}
+                            <button onClick={() => handleButtonClick('4')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">4</button>
+                            <button onClick={() => handleButtonClick('5')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">5</button>
+                            <button onClick={() => handleButtonClick('6')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">6</button>
+                            <button onClick={() => handleButtonClick('clear')} className="bg-red-500 hover:bg-red-600 text-white p-3 rounded font-semibold">Clear</button>
 
-        {/* --- Row 3 --- */}
-        <button onClick={() => handleButtonClick('1')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">1</button>
-        <button onClick={() => handleButtonClick('2')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">2</button>
-        <button onClick={() => handleButtonClick('3')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">3</button>
+                            {/* --- Row 3 --- */}
+                            <button onClick={() => handleButtonClick('1')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">1</button>
+                            <button onClick={() => handleButtonClick('2')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">2</button>
+                            <button onClick={() => handleButtonClick('3')} className="bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl">3</button>
 
-        {/* Search button starts in row 3 and spans 2 rows down */}
-        <button
-            onClick={() => handleButtonClick('search')}
-            className="row-span-2 bg-green-500 hover:bg-green-600 text-white p-3 rounded font-semibold"
-        >
-            Search
-        </button>
+                            {/* Search button starts in row 3 and spans 2 rows down */}
+                            <button
+                                onClick={() => handleButtonClick('search')}
+                                className="row-span-2 bg-green-500 hover:bg-green-600 text-white p-3 rounded font-semibold"
+                            >
+                                Search
+                            </button>
 
-        {/* --- Row 4 --- */}
-        {/* Zero button starts in row 4 and spans 3 columns across */}
-        <button
-            onClick={() => handleButtonClick('0')}
-            className="col-span-3 bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
-        >
-            0
-        </button>
-    </div>
-</Card>
+                            {/* --- Row 4 --- */}
+                            {/* Zero button starts in row 4 and spans 3 columns across */}
+                            <button
+                                onClick={() => handleButtonClick('0')}
+                                className="col-span-3 bg-gray-300 hover:bg-gray-400 text-black p-3 rounded font-semibold text-xl"
+                            >
+                                0
+                            </button>
+                        </div>
+                    </Card>
 
                     {/* Order Details Section */}
                     <Card title='Order Details' >
@@ -782,7 +782,7 @@ const Dashboard = () => {
                                                 )}
                                             </>
                                         )
-                                })()}
+                                    })()}
                             </div>
                         )}
                     </Card>

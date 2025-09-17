@@ -24,9 +24,9 @@ const MenuPage = ({
     getTotalAmount,
     handlePlaceOrder,
 }) => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3 h-full gap-4 p-4">
         {/* Left: Order Summary */}
-        <div className="lg:col-span-1 flex flex-col bg-white border-r border-gray-200 overflow-hidden">
+        <div className="lg:col-span-1 flex flex-col bg-white border border-gray-200 overflow-hidden rounded-lg shadow-sm">
             <div className="p-4 border-b flex-shrink-0">
                 <h2 className="text-xl font-semibold">Your Order</h2>
             </div>
@@ -47,26 +47,24 @@ const MenuPage = ({
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-semibold truncate">{item.name}</h4>
                                 <p className="text-sm text-gray-600">₹{item.price}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
+                                <div className="flex items-center gap-3 mt-2">
+                                    <button
+                                        type="button"
                                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                        className="w-8 h-8 p-0 text-sm"
+                                        className="flex items-center justify-center w-7 h-7 bg-red-200 text-gray-700 rounded-full hover:bg-red-300 transition-colors duration-200"
                                     >
-                                        -
-                                    </Button>
-                                    <span className="font-medium text-lg min-w-[20px] text-center">
+                                        <span className="text-xl font-semibold mb-1">−</span>
+                                    </button>
+                                    <span className="font-semibold text-lg min-w-[20px] text-center">
                                         {item.quantity}
                                     </span>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
+                                    <button
+                                        type="button"
                                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                        className="w-8 h-8 p-0 text-sm"
+                                        className="flex items-center justify-center w-7 h-7 bg-green-200 text-gray-700 rounded-full hover:bg-green-300 transition-colors duration-200"
                                     >
-                                        +
-                                    </Button>
+                                        <span className="text-xl font-semibold mb-1">+</span>
+                                    </button>
                                 </div>
                             </div>
                             <div className="text-right">
@@ -96,9 +94,9 @@ const MenuPage = ({
         </div>
 
         {/* Right: Menu Items */}
-        <div className="lg:col-span-2 bg-gray-50 flex flex-col overflow-hidden">
+        <div className="lg:col-span-2 bg-white flex flex-col border border-gray-200 overflow-hidden rounded-lg shadow-sm">
             {/* Fixed header with search and categories */}
-            <div className="p-4 bg-white rounded-lg shadow-sm m-4 mb-0 flex-shrink-0">
+            <div className="p-4 border-b border-gray-200 flex-shrink-0">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                     <input
                         type="text"
@@ -128,7 +126,7 @@ const MenuPage = ({
             </div>
 
             {/* Scrollable menu items area */}
-            <div className="flex-1 overflow-y-auto p-4 pt-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
                 {isLoading && (
                     <div className="flex justify-center items-center h-full">
                         <Loader/>
@@ -482,7 +480,7 @@ const ManualOrder = () => {
     const categories = [...new Set(menuItems.map(item => item.category))]
 
     return (
-        <div className="h-screen bg-gray-50 overflow-hidden">
+        <div className="h-screen bg-bg overflow-hidden">
             {currentPage === 'menu' ? (
                 <MenuPage
                     selectedItems={selectedItems}
