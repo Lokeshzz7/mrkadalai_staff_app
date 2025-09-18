@@ -87,7 +87,7 @@ const SignIn = () => {
             className="min-h-screen w-full flex items-center justify-center p-4"
             style={{
                 backgroundColor: 'black',
-                backgroundImage: `url('https://buvanesh-adya.s3.eu-north-1.amazonaws.com/stbg.jpg')`,
+                backgroundImage: `url('https://buvanesh-adya.s3.eu-north-1.amazonaws.com/stbg.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
