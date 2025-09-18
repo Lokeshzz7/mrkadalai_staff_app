@@ -87,7 +87,7 @@ const SignIn = () => {
             className="min-h-screen w-full flex items-center justify-center p-4"
             style={{
                 backgroundColor: 'black',
-                backgroundImage: `url('/src/assets/stbg.png')`,
+                backgroundImage: `url('https://buvanesh-adya.s3.eu-north-1.amazonaws.com/stbg.jpg')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
@@ -95,7 +95,7 @@ const SignIn = () => {
         >
             <div className="bg-white p-8 sm:p-12 rounded-2xl shadow-xl w-full max-w-md">
                 <div className="text-center">
-                    <img src="/src/assets/logo2.jpg" alt="Logo" className="mx-auto h-20 w-auto mb-4" />
+                    <img src="https://buvanesh-adya.s3.eu-north-1.amazonaws.com/logo2.jpg" alt="Logo" className="mx-auto h-20 w-auto mb-4" />
                     <h2 className="text-3xl font-bold text-gray-900 mb-8">
                         Welcome Back
                     </h2>
