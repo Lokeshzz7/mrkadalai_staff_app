@@ -18,6 +18,8 @@ const Dashboard = () => {
     const [error, setError] = useState(null)
     const [selectedItems, setSelectedItems] = useState([])
     const [showModal, setShowModal] = useState(false)
+    const [showDetailsModal, setShowDetailsModal] = useState(false)
+    const [selectedOrderForModal, setSelectedOrderForModal] = useState(null)
     const [modalAction, setModalAction] = useState('')
     const [actionLoading, setActionLoading] = useState(false)
     
@@ -40,6 +42,33 @@ const Dashboard = () => {
     const [homeDataLoading, setHomeDataLoading] = useState(true)
 
     const { outletId } = useOutletDetails()
+
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        const date = new Date(dateString);
+        const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+        const options = { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'UTC' };
+        return utcDate.toLocaleDateString('en-GB', options);
+    };
+
+    const formatSlot = (slot) => {
+        if (!slot || slot === 'N/A') return 'N/A';
+        try {
+            const parts = slot.replace('SLOT_', '').split('_');
+            const startTime = parseInt(parts[0], 10);
+            const endTime = parseInt(parts[1], 10);
+            const formatHour = (hour) => {
+                if (hour === 12) return '12 PM';
+                if (hour === 0) return '12 AM';
+                const ampm = hour < 12 ? 'AM' : 'PM';
+                const h = hour % 12 || 12;
+                return `${h} ${ampm}`;
+            };
+            return `${formatHour(startTime)} - ${formatHour(endTime)}`;
+        } catch (e) {
+            return slot;
+        }
+    };
 
     // Fetch home data from API
     useEffect(() => {
@@ -90,110 +119,72 @@ const Dashboard = () => {
         fetchHomeData()
     }, [outletId])
 
-    // Fetch recent orders with pagination
-    const fetchRecentOrders = async (page = currentPage) => {
-        if (!outletId) {
-            setError('Outlet ID not found')
-            setLoading(false)
-            return
+    // Fetch recent orders with pagination and filtering
+    const fetchRecentOrders = async (page = 1) => {
+        if (!outletId) { 
+            setError('Outlet ID not found'); 
+            setLoading(false); 
+            return; 
         }
-
-        setLoading(true)
+        
+        setLoading(true);
         try {
-            const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/?page=${page}&limit=${ordersPerPage}`)
-
+            const params = new URLSearchParams({ page, limit: ordersPerPage });
+            if (statusFilter) params.append('status', statusFilter);
+            
+            const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/?${params.toString()}`);
+            
             if (response.orders) {
-                const transformedOrders = response.orders.map(order => {
-                    const itemsString = order.items.map(item =>
-                        `${item.name} (${item.quantity})`
-                    ).join(', ')
-
-                    const orderTime = new Date(order.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-
-                    return {
-                        id: `#${order.billNumber}`,
-                        customer: order.customerName,
-                        items: itemsString,
-                        time: orderTime,
-                        status: order.status.toLowerCase(),
-                        billNumber: order.billNumber,
-                        orderType: order.orderType,
-                        paymentMode: order.paymentMode,
-                        originalItems: order.items,
-                        createdAt: order.createdAt
-                    }
-                })
-
-                setOrders(transformedOrders)
-                setTotalOrdersCount(response.total)
-                setCurrentPage(response.currentPage)
+                setOrders(response.orders);
+                setTotalOrdersCount(response.total);
+                setCurrentPage(response.currentPage);
             } else {
-                setOrders([])
+                setOrders([]);
             }
-            setError(null)
+            setError(null);
         } catch (err) {
-            console.error('Error fetching recent orders:', err)
-            setError('Failed to fetch recent orders')
-            setOrders([])
+            console.error('Error fetching recent orders:', err);
+            setError('Failed to fetch recent orders');
+            setOrders([]);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
-    // Initial fetch and fetch when page changes
+    // Initial fetch and fetch when status filter changes
     useEffect(() => {
-        fetchRecentOrders(currentPage)
-    }, [outletId, currentPage])
+        if (outletId) {
+            fetchRecentOrders(1);
+        }
+    }, [outletId, statusFilter]);
 
-    // Filter orders based on search query and status filter
-    const filteredOrders = orders.filter(order => {
-        const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            order.customer.toLowerCase().includes(searchQuery.toLowerCase())
-        
-        const matchesStatus = statusFilter === '' || order.status === statusFilter.toLowerCase()
-        
-        return matchesSearch && matchesStatus
-    })
+    // Fetch when page changes
+    useEffect(() => {
+        if (outletId) {
+            fetchRecentOrders(currentPage);
+        }
+    }, [currentPage]);
 
     const getStatusVariant = (status) => {
-        switch (status) {
+        switch (status?.toLowerCase()) {
             case 'pending': return 'pending'
             case 'preparing': return 'info'
-            case 'completed': return 'success'
-            case 'delivered': return 'success'
+            case 'completed': case 'delivered': return 'success'
             case 'partially_delivered': return 'warning'
             case 'cancelled': return 'danger'
             default: return 'default'
         }
     }
 
-    // Transform filtered orders for table display
-    const recentOrders = filteredOrders.map(order => {
-        const displayLimit = 2; // Show up to 2 items
-        const items = order.originalItems || [];
-        let itemsDisplay;
+    const openDetailsModal = (order) => {
+        setSelectedOrderForModal(order);
+        setShowDetailsModal(true);
+    };
 
-        if (items.length > displayLimit) {
-            const shownItems = items.slice(0, displayLimit).map(item => `${item.name} (${item.quantity})`).join(', ');
-            const remainingCount = items.length - displayLimit;
-            itemsDisplay = `${shownItems}, +${remainingCount} more`;
-        } else {
-            itemsDisplay = items.map(item => `${item.name} (${item.quantity})`).join(', ');
-        }
-
-        return [
-            order.id,
-            order.customer,
-            itemsDisplay,
-            order.time,
-            <Badge variant={getStatusVariant(order.status)} key={order.billNumber}>
-                {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace('_', ' ')}
-            </Badge>
-        ];
-    });
+    const closeDetailsModal = () => {
+        setShowDetailsModal(false);
+        setSelectedOrderForModal(null);
+    };
 
     const handleButtonClick = (value) => {
         if (value === 'clear') {
@@ -366,7 +357,7 @@ const Dashboard = () => {
                 // Dynamically re-fetch the order to reflect the changes
                 searchOrder()
                 // Refresh recent orders list in background
-                fetchRecentOrders(1, false)
+                fetchRecentOrders(1)
             }
         } catch (err) {
             console.error('Error updating order:', err)
@@ -441,11 +432,6 @@ const Dashboard = () => {
         return amount.toLocaleString('en-IN')
     }
 
-    // Function to handle refresh logic in recent orders table
-    const handleRefresh = () => {
-        fetchRecentOrders(currentPage);
-    };
-
     const DeliverySlot = {
         SLOT_11_12: '11:00-12:00',
         SLOT_12_13: '12:00-13:00',
@@ -460,7 +446,24 @@ const Dashboard = () => {
         return DeliverySlot[slot] || 'Invalid Slot';
     }
 
-    const totalPages = Math.ceil(totalOrdersCount / ordersPerPage)
+    // Updated table data for Recent Orders
+    const recentOrdersTableData = orders
+        .filter(order => 
+            String(order.billNumber).toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map(order => [
+            `#${order.billNumber}`,
+            order.customerName,
+            <Badge key={`${order.billNumber}-type`} variant={order.orderType === 'MANUAL' ? 'info' : 'success'}>{order.orderType}</Badge>,
+            formatDate(order.deliveryDate),
+            formatSlot(order.deliverySlot),
+            `₹${order.totalAmount.toFixed(2)}`,
+            <Badge key={`${order.billNumber}-status`} variant={getStatusVariant(order.status)}>{order.status}</Badge>,
+            <Button key={`${order.billNumber}-view`} onClick={() => openDetailsModal(order)}>View</Button>
+        ]);
+
+    const totalPages = Math.ceil(totalOrdersCount / ordersPerPage) || 1;
 
     return (
         <div className="space-y-6">
@@ -797,85 +800,107 @@ const Dashboard = () => {
             {/* Recent Orders Table */}
             <div>
                 <Card>
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                         <h2 className="text-lg font-semibold">Recent Orders</h2>
                         <div className="flex items-center gap-2">
                             <input
                                 type="text"
                                 placeholder="Search by ID or Customer..."
-                                className="border px-3 py-1 rounded"
+                                className="border px-3 py-1.5 rounded text-sm"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                             <select
                                 value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="border px-3 py-1 rounded"
+                                onChange={(e) => {
+                                    setStatusFilter(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="border px-3 py-1.5 rounded bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                             >
-                                <option value="">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="partially_delivered">Partially Delivered</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="">All Statuses</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="CANCELLED">Cancelled</option>
+                                <option value="PARTIALLY_DELIVERED">Partially Delivered</option>
                             </select>
-                            <Button
-                                variant="black"
-                                onClick={handleRefresh}
-                                disabled={loading}
-                                className="disabled:bg-gray-700"
-                            >
-                                {loading ? 'Refreshing...' : 'Refresh'}
+                            <Button variant="black" onClick={() => fetchRecentOrders(1)} disabled={loading}>
+                                {loading ? '...' : 'Refresh'}
                             </Button>
                         </div>
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-8">
-                            <p className="flex justify-center items-center"><Loader/></p>
-                        </div>
+                        <div className="flex justify-center items-center"><Loader /></div>
                     ) : error ? (
-                        <div className="text-center py-8">
-                            <p className="text-red-500">{error}</p>
-                        </div>
-                    ) : recentOrders.length === 0 ? (
-                        <div className="text-center py-8">
-                            <p className="text-gray-500">
-                                {searchQuery || statusFilter ? 'No orders found matching your search/filter.' : 'No recent orders found.'}
-                            </p>
+                        <div className="text-center py-8 text-red-500">{error}</div>
+                    ) : recentOrdersTableData.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                            <p>{searchQuery || statusFilter ? 'No orders match your criteria.' : 'No recent orders found.'}</p>
                         </div>
                     ) : (
                         <>
                             <Table
-                                headers={['Order ID', 'Customer', 'Items', 'Time', 'Status']}
-                                data={recentOrders}
+                                headers={['Order ID', 'Customer', 'Type', 'Delivery Date', 'Delivery Slot', 'Total', 'Status', 'Action']}
+                                data={recentOrdersTableData}
                             />
-                            
-                            {/* Pagination Controls */}
                             <div className="flex justify-center items-center gap-4 mt-4">
-                                <Button
-                                    onClick={() => setCurrentPage(prev => prev - 1)}
-                                    disabled={currentPage === 1}
-                                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded disabled:bg-gray-100 disabled:text-gray-400"
-                                >
-                                     &lt;
-                                </Button>
-                                <span className="text-sm text-gray-600">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <Button
-                                    onClick={() => setCurrentPage(prev => prev + 1)}
-                                    disabled={currentPage === totalPages}
-                                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded disabled:bg-gray-100 disabled:text-gray-400"
-                                >
-                                    &gt;
-                                </Button>
+                                <Button onClick={() => setCurrentPage(prev => prev > 1 ? prev - 1 : 1)} disabled={currentPage === 1}>&lt;</Button>
+                                <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
+                                <Button onClick={() => setCurrentPage(prev => prev < totalPages ? prev + 1 : totalPages)} disabled={currentPage >= totalPages}>&gt;</Button>
                             </div>
                         </>
                     )}
                 </Card>
             </div>
 
-            {/* Modal */}
+            {/* Details Modal */}
+            <Modal
+                isOpen={showDetailsModal}
+                onClose={closeDetailsModal}
+                title={`Order Details - #${selectedOrderForModal?.billNumber}`}
+                footer={<Button variant="secondary" onClick={closeDetailsModal}>Close</Button>}
+            >
+                {selectedOrderForModal && (
+                    <div className="space-y-4 text-sm">
+                        <div>
+                            <p><strong>Customer Name:</strong> {selectedOrderForModal.customerName}</p>
+                            <p><strong>Phone Number:</strong> {selectedOrderForModal.customerPhone}</p>
+                            <p><strong>Status:</strong> <Badge variant={getStatusVariant(selectedOrderForModal.status)}>{selectedOrderForModal.status}</Badge></p>
+                            <p><strong>Delivery Date:</strong> {formatDate(selectedOrderForModal.deliveryDate)}</p>
+                            <p><strong>Delivery Slot:</strong> {formatSlot(selectedOrderForModal.deliverySlot)}</p>
+                            <p><strong>Order Type:</strong> <Badge variant={selectedOrderForModal.orderType === 'MANUAL' ? 'info' : 'success'}>{selectedOrderForModal.orderType}</Badge></p>
+                            {selectedOrderForModal.paymentMode && (<p><strong>Payment Method:</strong> {selectedOrderForModal.paymentMode}</p>)}
+                        </div>
+                        <table className="w-full border-collapse border border-gray-300 mt-4">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 border text-left">Item</th>
+                                    <th className="p-2 border text-center">Quantity</th>
+                                    <th className="p-2 border text-right">Unit Price</th>
+                                    <th className="p-2 border text-right">Total Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedOrderForModal.items.map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td className="p-2 border">{item.name}</td>
+                                        <td className="p-2 border text-center">{item.quantity}</td>
+                                        <td className="p-2 border text-right">₹{item.unitPrice.toFixed(2)}</td>
+                                        <td className="p-2 border text-right">₹{(item.quantity * item.unitPrice).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                                <tr className="font-semibold bg-gray-50">
+                                    <td colSpan="3" className="p-2 border text-right">Grand Total</td>
+                                    <td className="p-2 border text-right">₹{selectedOrderForModal.totalAmount.toFixed(2)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Action Modal */}
             <Modal
                 isOpen={showModal}
                 onClose={closeModal}

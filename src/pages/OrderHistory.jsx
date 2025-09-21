@@ -25,6 +25,39 @@ const OrderHistory = () => {
 
     const { outletId } = useOutletDetails()
 
+    // Helper function to format date strings to 'DD Mon YYYY'
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === 'N/A') return 'N/A';
+        const date = new Date(dateString);
+        // Use UTC methods to prevent timezone shifts
+        const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+        const options = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
+        return utcDate.toLocaleDateString('en-GB', options);
+    };
+    
+    // Helper function to format delivery slots
+    const formatSlot = (slot) => {
+        if (!slot || slot === 'N/A') return 'N/A';
+        try {
+            const parts = slot.replace('SLOT_', '').split('_');
+            const startTime = parseInt(parts[0], 10);
+            const endTime = parseInt(parts[1], 10);
+    
+            const formatHour = (hour) => {
+                if (hour === 12) return '12 PM';
+                if (hour === 0) return '12 AM';
+                const ampm = hour < 12 ? 'AM' : 'PM';
+                const h = hour % 12 || 12; // Converts 13 to 1, etc.
+                return `${h} ${ampm}`;
+            };
+    
+            return `${formatHour(startTime)} - ${formatHour(endTime)}`;
+        } catch (e) {
+            return slot; // Fallback if format is unexpected
+        }
+    };
+
+
     // Function to fetch orders for a specific date
     const fetchOrders = async (date) => {
         setLoading(true)
@@ -97,29 +130,24 @@ const OrderHistory = () => {
     };
 
     const downloadExcel = async () => {
+        if (orders.length === 0) {
+            toast.error('No orders found for the selected date');
+            return;
+        }
+
         try {
-            const response = await apiRequest(
-                `/staff/outlets/get-order-history/?outletId=${outletId}&date=${selectedDate.format('YYYY-MM-DD')}`
-            )
-
-            const ordersData = response.orders || []
-
-            if (ordersData.length === 0) {
-                toast.error('No orders found for the selected date')
-                return
-            }
-
             const worksheetData = [
-                ['Order ID', 'Customer Name', 'Order Type', 'Time', 'Items', 'Status'],
-                ...ordersData.map(order => [
+                ['Order ID', 'Customer Name', 'Order Type', 'Delivery Slot', 'Delivery Date', 'Items', 'Status'],
+                ...orders.map(order => [
                     order.orderId,
                     order.customerName,
                     order.orderType,
-                    dayjs(order.createdAt).format('hh:mm A'),
+                    formatSlot(order.deliverySlot),
+                    formatDate(order.deliveryDate),
                     order.items.map(item => `${item.quantity}x ${item.name}`).join(', '),
                     order.status
                 ])
-            ]
+            ];
 
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
             const workbook = XLSX.utils.book_new()
@@ -134,24 +162,39 @@ const OrderHistory = () => {
         }
     }
 
+    const getStatusVariant = (status) => {
+        switch (status.toLowerCase()) {
+            case 'delivered':
+            case 'completed':
+                return 'success';
+            case 'preparing':
+            case 'pending':
+            case 'partially_delivered':
+                return 'warning';
+            case 'cancelled':
+                return 'danger';
+            default:
+                return 'info';
+        }
+    };
 
     // Transform orders data for table
     const orderTableData = orders.map(order => {
         const itemDisplay =
             order.items.length > 2
                 ? order.items
-                      .slice(0, 2)
-                      .map(item => `${item.quantity}x ${item.name}`)
-                      .join(', ') + ` +${order.items.length - 2} more`
+                    .slice(0, 2)
+                    .map(item => `${item.quantity}x ${item.name}`)
+                    .join(', ') + ` +${order.items.length - 2} more`
                 : order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')
 
         return [
-            order.orderId,
+            `#${order.orderId}`,
             order.customerName,
-            order.orderType,
-            dayjs(order.createdAt).format('hh:mm A'),
+            <Badge variant={order.orderType === 'MANUAL' ? 'info' : 'success'}>{order.orderType}</Badge>,
+            formatSlot(order.deliverySlot),
             itemDisplay,
-            <Badge key={order.orderId} variant={order.status.toLowerCase()}>
+            <Badge key={order.orderId} variant={getStatusVariant(order.status)}>
                 {order.status}
             </Badge>,
             <Button key={`view-${order.orderId}`} onClick={() => setSelectedOrder(order)}>
@@ -164,13 +207,13 @@ const OrderHistory = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center flex-wrap gap-2">
                 <h1 className="text-2xl font-bold">Order History</h1>
-            <Button
-                        variant="secondary"
-                        onClick={downloadExcel}
-                        disabled={loading || orders.length === 0}
-                    >
-                        Download Excel
-            </Button>
+                <Button
+                    variant="secondary"
+                    onClick={downloadExcel}
+                    disabled={loading || orders.length === 0}
+                >
+                    Download Excel
+                </Button>
             </div>
             
             <div className="flex justify-between items-center flex-wrap gap-2">
@@ -231,7 +274,7 @@ const OrderHistory = () => {
                                 'Order ID',
                                 'Customer Name',
                                 'Order Type',
-                                'Time',
+                                'Delivery Slot',
                                 'Items',
                                 'Status',
                                 'Action'
@@ -252,7 +295,7 @@ const OrderHistory = () => {
             <Modal
                 isOpen={!!selectedOrder}
                 onClose={() => setSelectedOrder(null)}
-                title={`Order Details - ${selectedOrder?.orderId || ''}`}
+                title={`Order Details - #${selectedOrder?.orderId || ''}`}
                 footer={
                     <Button variant="secondary" onClick={() => setSelectedOrder(null)}>
                         Close
@@ -260,33 +303,42 @@ const OrderHistory = () => {
                 }
             >
                 {selectedOrder && (
-                    <div className="space-y-4">
-                        <p>
-                            <strong>Customer:</strong> {selectedOrder.customerName}
-                        </p>
-                        <p>
-                            <strong>Order Type:</strong> {selectedOrder.orderType}
-                        </p>
-                        <p>
-                            <strong>Time:</strong>{' '}
-                            {dayjs(selectedOrder.createdAt).format('DD MMM YYYY, hh:mm A')}
-                        </p>
-                        <p>
-                            <strong>Status:</strong>{' '}
-                            <Badge variant={selectedOrder.status.toLowerCase()}>
-                                {selectedOrder.status}
-                            </Badge>
-                        </p>
+                    <div className="space-y-4 text-sm">
                         <div>
-                            <strong>Items:</strong>
-                            <ul className="list-disc pl-5 mt-2 space-y-1">
-                                {selectedOrder.items.map((item, idx) => (
-                                    <li key={idx}>
-                                        {item.quantity}x {item.name}
-                                    </li>
-                                ))}
-                            </ul>
+                            <p><strong>Customer Name:</strong> {selectedOrder.customerName}</p>
+                            <p><strong>Phone Number:</strong> {selectedOrder.customerPhone}</p>
+                            <p><strong>Status:</strong> <Badge variant={getStatusVariant(selectedOrder.status)}>{selectedOrder.status}</Badge></p>
+                            <p><strong>Delivery Date:</strong> {formatDate(selectedOrder.deliveryDate)}</p>
+                            <p><strong>Delivery Slot:</strong> {formatSlot(selectedOrder.deliverySlot)}</p>
+                            <p><strong>Order Type:</strong> <Badge variant={selectedOrder.orderType === 'MANUAL' ? 'info' : 'success'}>{selectedOrder.orderType}</Badge></p>
+                            {selectedOrder.paymentMethod && (
+                                <p><strong>Payment Method:</strong> {selectedOrder.paymentMethod}</p>
+                            )}
                         </div>
+                        <table className="w-full border-collapse border border-gray-300 mt-4">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 border text-left">Item</th>
+                                    <th className="p-2 border text-center">Quantity</th>
+                                    <th className="p-2 border text-right">Unit Price</th>
+                                    <th className="p-2 border text-right">Total Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedOrder.items.map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td className="p-2 border">{item.name}</td>
+                                        <td className="p-2 border text-center">{item.quantity}</td>
+                                        <td className="p-2 border text-right">₹{item.unitPrice.toFixed(2)}</td>
+                                        <td className="p-2 border text-right">₹{(item.quantity * item.unitPrice).toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                                <tr className="font-semibold bg-gray-50">
+                                    <td colSpan="3" className="p-2 border text-right">Grand Total</td>
+                                    <td className="p-2 border text-right">₹{selectedOrder.totalAmount.toFixed(2)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </Modal>
@@ -294,4 +346,4 @@ const OrderHistory = () => {
     )
 }
 
-export default OrderHistory
+export default OrderHistory;
