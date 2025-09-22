@@ -29,17 +29,45 @@ const Notifications = () => {
     const { outletId } = useOutletDetails();
     const orderRefs = useRef({}); // Ref for scrolling to orders
 
+    // --- NEW HELPER FUNCTIONS to format date and slot ---
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        });
+    };
+
+    const formatSlot = (slot) => {
+        if (!slot || typeof slot !== 'string') return 'N/A';
+        try {
+            const parts = slot.replace('SLOT_', '').split('_');
+            const startTime = parseInt(parts[0], 10);
+            const endTime = parseInt(parts[1], 10);
+
+            const formatHour = (hour) => {
+                if (hour === 12) return '12 PM';
+                if (hour === 0 || hour === 24) return '12 AM';
+                const ampm = hour < 12 ? 'AM' : 'PM';
+                const h = hour % 12 || 12;
+                return `${h} ${ampm}`;
+            };
+            return `${formatHour(startTime)} - ${formatHour(endTime)}`;
+        } catch (e) {
+            return slot; // Fallback if format is unexpected
+        }
+    };
+
     useEffect(() => {
         if (outletId) {
             if (activeTab === 'orders') {
-                fetchRecentOrders();
+                fetchPendingOrders();
             } else if (activeTab === 'inventory') {
                 fetchStocks();
             }
         }
     }, [outletId, activeTab]);
 
-    const fetchRecentOrders = async () => {
+    const fetchPendingOrders = async () => {
         if (!outletId) {
             setOrdersError('Outlet ID not found');
             return;
@@ -47,37 +75,36 @@ const Notifications = () => {
         setOrdersLoading(true);
         setOrdersError('');
         try {
-            const response = await apiRequest(`/staff/outlets/get-recent-orders/${outletId}/`);
+            // Using the endpoint that fetches PENDING orders
+            const response = await apiRequest(`/staff/outlets/get-current-order/${outletId}/`);
             if (response.orders) {
                 const appOrders = response.orders
-                    .filter(order => order.orderType?.toLowerCase() === 'app')
+                    .filter(order => order.type?.toLowerCase() === 'app') // Ensure it's an app order
                     .map(order => ({
-                        id: `#${order.billNumber}`,
-                        customer: order.customerName,
+                        id: `#${order.id}`,
+                        customer: order.customer?.user?.name || 'Guest',
                         date: new Date(order.createdAt).toLocaleDateString(),
                         time: new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        // --- ADDED deliveryDate and deliverySlot ---
+                        deliveryDate: formatDate(order.deliveryDate),
+                        deliverySlot: formatSlot(order.deliverySlot),
                         items: order.items.map(item => ({
-                            name: item.name,
+                            name: item.product.name,
                             price: `₹${item.unitPrice.toFixed(2)}`,
-                            description: item.description || 'No description',
+                            description: item.product.description || 'No description',
                             qty: item.quantity
                         })),
                         totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
                         status: order.status.toLowerCase(),
-                        billNumber: order.billNumber,
-                        orderType: order.orderType,
-                        paymentMode: order.paymentMode,
-                        originalItems: order.items,
-                        createdAt: order.createdAt,
-                        orderId: order.billNumber
+                        orderId: order.id // Use the actual order ID for actions
                     }));
                 setAllOrders(appOrders);
             } else {
                 setAllOrders([]);
             }
         } catch (err) {
-            console.error('Error fetching recent orders:', err);
-            setOrdersError('Failed to fetch recent orders');
+            console.error('Error fetching pending orders:', err);
+            setOrdersError('Failed to fetch pending orders');
             setAllOrders([]);
         } finally {
             setOrdersLoading(false);
@@ -103,10 +130,9 @@ const Notifications = () => {
         }
     };
     
-    // --- All your handler functions remain unchanged ---
     const handleRestock = async () => {
         if (!quantity || !selectedItem || !outletId) {
-            setError('Please enter a valid quantity');
+            toast.error('Please enter a valid quantity');
             return;
         }
         setModalLoading(true);
@@ -150,10 +176,9 @@ const Notifications = () => {
                     outletId: parseInt(outletId),
                     status
                 }),
-                headers: { 'Content-Type': 'application/json' }
             });
             toast.success(`Order ${selectedOrder.id} marked as ${status.toLowerCase()}.`);
-            fetchRecentOrders(); // Re-fetch to get the latest list
+            fetchPendingOrders(); // Re-fetch to get the latest list
             handleCloseOrderModal();
         } catch (err) {
             toast.error(err.message || 'Error updating order');
@@ -168,27 +193,18 @@ const Notifications = () => {
         setOrderModalAction('');
     };
     
-    // --- Helper functions for UI and Logic ---
-    const isOrderCompleted = (status) => ['completed', 'delivered', 'cancelled'].includes(status.toLowerCase());
-
     const getSortedOrders = () => {
-        return [...allOrders].sort((a, b) => {
-            if (a.status === 'pending' && b.status !== 'pending') return -1;
-            if (a.status !== 'pending' && b.status === 'pending') return 1;
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
+        return [...allOrders].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     };
     
     const filterStockByCategory = () => {
         return stockData.filter(item => ['Meals', 'Starters', 'Desserts', 'Beverages'].includes(item.category));
     };
     
-    // NEW: Function to handle clicking on the top order IDs
     const handleOrderStackClick = (orderId) => {
         const ref = orderRefs.current[orderId];
         if (ref) {
             ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Add a temporary highlight for better UX
             ref.classList.add('ring-2', 'ring-indigo-500', 'ring-offset-2');
             setTimeout(() => {
                 ref.classList.remove('ring-2', 'ring-indigo-500', 'ring-offset-2');
@@ -196,16 +212,14 @@ const Notifications = () => {
         }
     };
 
-    // --- Function to handle refresh logic---
     const handleRefresh = () => {
         if (activeTab === 'orders') {
-            fetchRecentOrders();
+            fetchPendingOrders();
         } else if (activeTab === 'inventory') {
             fetchStocks();
         }
     };
     
-
     return (
         <div className="space-y-6 p-6">
             {(error || ordersError) && (
@@ -215,11 +229,11 @@ const Notifications = () => {
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <h2 className="text-2xl font-bold text-gray-800">
-                       {activeTab === 'orders' ? 'App Orders List' : 'Inventory'}
+                       {activeTab === 'orders' ? 'Pending App Orders' : 'Inventory'}
                     </h2>
                     <Button
                         variant="black"
-                       onClick={handleRefresh}
+                        onClick={handleRefresh}
                         disabled={loading || ordersLoading}
                     >
                         {loading || ordersLoading ? 'Refreshing...' : 'Refresh'}
@@ -237,22 +251,15 @@ const Notifications = () => {
                     
                     {!ordersLoading && allOrders.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                            {getSortedOrders().slice(0, 6).map((order) => {
-                                const statusColors = {
-                                    pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                                    delivered: 'bg-green-100 text-green-800 border-green-300',
-                                    cancelled: 'bg-red-100 text-red-800 border-red-300'
-                                };
-                                return (
-                                    <div
-                                        key={order.id}
-                                        onClick={() => handleOrderStackClick(order.id)}
-                                        className={`border-2 rounded-lg p-2 text-center shadow-sm h-16 flex items-center justify-center cursor-pointer transition-transform transform hover:scale-105 ${statusColors[order.status] || 'bg-gray-100'}`}
-                                    >
-                                        <span className="text-sm font-semibold">{order.id}</span>
-                                    </div>
-                                );
-                            })}
+                            {getSortedOrders().slice(0, 6).map((order) => (
+                                <div
+                                    key={order.id}
+                                    onClick={() => handleOrderStackClick(order.id)}
+                                    className="border-2 rounded-lg p-2 text-center shadow-sm h-16 flex items-center justify-center cursor-pointer transition-transform transform hover:scale-105 bg-yellow-100 text-yellow-800 border-yellow-300"
+                                >
+                                    <span className="text-sm font-semibold">{order.id}</span>
+                                </div>
+                            ))}
                         </div>
                     )}
 
@@ -275,9 +282,15 @@ const Notifications = () => {
                                                 <div>
                                                     <h3 className="text-lg font-bold text-gray-900">{order.id}</h3>
                                                     <p className="text-sm text-gray-500">by {order.customer}</p>
+                                                    {/* --- MODIFIED: Displaying Delivery Info --- */}
+                                                    <div className="text-sm font-semibold text-indigo-600 mt-1">
+                                                        <span>{order.deliveryDate}</span>
+                                                        <span className="mx-2">|</span>
+                                                        <span>{order.deliverySlot}</span>
+                                                    </div>
                                                 </div>
-                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${ { pending: 'bg-yellow-100 text-yellow-800', delivered: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800' }[order.status] || 'bg-gray-100' }`}>
-                                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                                    Pending
                                                 </span>
                                             </div>
                                             <p className="text-xs text-gray-400 mb-4">{order.date} at {order.time}</p>
@@ -292,14 +305,10 @@ const Notifications = () => {
                                             {order.items.length > 3 && <p className="text-sm text-gray-400 text-center pt-1">+ {order.items.length - 3} more items</p>}
                                         </div>
                                         <div className="p-4 bg-gray-50 border-t border-gray-100 rounded-b-xl">
-                                            {order.status === 'pending' ? (
-                                                <div className="flex space-x-3">
-                                                    <Button variant="success" className="w-full" onClick={() => handleOrderAction(order, 'delivered')}>Delivered</Button>
-                                                    <Button variant="danger" className="w-full" onClick={() => handleOrderAction(order, 'cancel')}>Cancel</Button>
-                                                </div>
-                                            ) : (
-                                                <p className="text-center text-sm font-medium text-gray-500">Order was {order.status}.</p>
-                                            )}
+                                            <div className="flex space-x-3">
+                                                <Button variant="success" className="w-full" onClick={() => handleOrderAction(order, 'delivered')}>Delivered</Button>
+                                                <Button variant="danger" className="w-full" onClick={() => handleOrderAction(order, 'cancel')}>Cancel</Button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))
@@ -309,9 +318,9 @@ const Notifications = () => {
                 </div>
             )}
             
-            {/* --- INVENTORY SECTION (UNCHANGED) --- */}
             {activeTab === 'inventory' && (
-                <div className="space-y-6">
+                // --- Your inventory JSX remains unchanged ---
+                 <div className="space-y-6">
                     {loading && <div className="flex justify-center items-center text-center py-4"><Loader/></div>}
                     {!loading && (
                         <div className="max-h-[500px] overflow-y-auto pr-2" style={{ scrollBehavior: 'smooth', scrollbarWidth: 'thin', scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent' }}>
@@ -342,7 +351,6 @@ const Notifications = () => {
                 </div>
             )}
 
-            {/* --- All Modals are Unchanged --- */}
             <Modal isOpen={showOrderModal} onClose={handleCloseOrderModal} title={orderModalAction === 'delivered' ? 'Confirm Delivery' : 'Confirm Cancellation'} footer={
                 <div className="space-x-2">
                     <Button variant="secondary" onClick={handleCloseOrderModal} disabled={orderActionLoading}>Cancel</Button>

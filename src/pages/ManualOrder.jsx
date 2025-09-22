@@ -169,7 +169,12 @@ const MenuPage = ({
                                 </div>
                                 <div className="p-4">
                                     <h4 className="text-lg font-semibold truncate mb-1">{item.name}</h4>
-                                    <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                                    {/* --- MODIFIED: Truncated the description --- */}
+                                    <p className="text-gray-600 text-sm mb-2 h-10">
+                                        {item.description && item.description.length > 50
+                                            ? `${item.description.substring(0, 35)}...`
+                                            : item.description}
+                                    </p>
                                     <div className="flex items-center justify-between">
                                         <span className="text-2xl font-bold text-green-600">₹{item.price}</span>
                                         <Badge variant={item.quantityAvailable > 0 ? 'success' : 'danger'}>
@@ -335,13 +340,6 @@ const ManualOrder = () => {
         fetchProducts()
     }, [outletId])
 
-    // Generate unique order ID
-    const generateOrderId = () => {
-        const timestamp = Date.now()
-        const randomNum = Math.floor(Math.random() * 1000)
-        return `ORD${timestamp.toString().slice(-6)}${randomNum.toString().padStart(3, '0')}`
-    }
-
     const addToOrder = (item) => {
         if (item.quantityAvailable === 0) {
             toast.error(`${item.name} is out of stock.`);
@@ -387,7 +385,7 @@ const ManualOrder = () => {
         (sum, item) => sum + item.price * item.quantity,
         0
     );
-        return Math.round(total * 100) / 100;
+        return total.toFixed(2);
     }
 
     const handlePlaceOrder = () => {
@@ -396,13 +394,10 @@ const ManualOrder = () => {
     }
 
     const handleConfirmOrder = () => {
-        const orderId = generateOrderId()
         const order = {
-            id: orderId,
             items: selectedItems,
             total: getTotalAmount(),
             timestamp: new Date().toISOString(),
-            status: 'pending'
         }
         setCurrentOrder(order)
         setShowConfirmModal(false)
@@ -422,7 +417,7 @@ const ManualOrder = () => {
             // Prepare order data for backend
             const orderData = {
                 outletId: outletId,
-                totalAmount: currentOrder.total,
+                totalAmount: parseFloat(currentOrder.total),
                 paymentMethod: paymentMethod.toUpperCase(),
                 items: currentOrder.items.map(item => ({
                     productId: item.id,
@@ -438,7 +433,7 @@ const ManualOrder = () => {
             })
 
             // Success
-            toast.success(`Payment successful! Order ${response.order.id} has been placed.`)
+            toast.success(`Payment successful! Order #${response.order.id} has been placed.`)
             
             // Reset everything
             setSelectedItems([])
@@ -446,7 +441,7 @@ const ManualOrder = () => {
             setPaymentMethod('')
             setCurrentPage('menu')
             
-            // Refresh products to update available quantities
+            // Re-fetch products to update available quantities
             const productsResponse = await apiRequest(`/staff/outlets/get-products-in-stock/${outletId}`)
             const transformedProducts = productsResponse.products.map(product => ({
                 id: product.id,
@@ -476,7 +471,6 @@ const ManualOrder = () => {
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    // Get unique categories from menuItems
     const categories = [...new Set(menuItems.map(item => item.category))]
 
     return (
