@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth.js';
-import Input from '../../components/ui/Input.jsx';
-import Button from '../../components/ui/Button.jsx';
-import Card from '../../components/ui/Card.jsx';
 import { ROUTES } from '../../utils/constants.js';
 import toast from 'react-hot-toast';
+
+// Define your API base URL here, consistent with your api.js
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://51.21.198.214:5500/api';
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
@@ -14,33 +13,23 @@ const SignUp = () => {
         phone: '',
         password: '',
         retypePassword: '',
+        aadhar: null,
+        pan: null
     });
     const [formErrors, setFormErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const { signUp, loading, error, clearError, isAuthenticated } = useAuth();
     const navigate = useNavigate();
-
-    // * Redirect if already authenticated
-    useEffect(() => {
-        if (isAuthenticated) {
-            navigate(ROUTES.DASHBOARD, { replace: true });
-        }
-    }, [isAuthenticated, navigate]);
-
-    useEffect(() => {
-        return () => {
-            if (clearError) clearError();
-        };
-    }, [clearError]);
 
     useEffect(() => {
         if (error) {
             const timer = setTimeout(() => {
-                if (clearError) clearError();
+                setError('');
             }, 10000);
             return () => clearTimeout(timer);
         }
-    }, [error, clearError]);
+    }, [error]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -48,6 +37,44 @@ const SignUp = () => {
             ...prev,
             [name]: value
         }));
+        if (formErrors[name]) {
+            setFormErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
+    };
+
+    const handleFileChange = (e) => {
+        const { name, files } = e.target;
+        const file = files[0];
+        
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setFormErrors(prev => ({
+                    ...prev,
+                    [name]: 'Please upload a valid image file (JPEG, PNG, WebP)'
+                }));
+                return;
+            }
+            
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                setFormErrors(prev => ({
+                    ...prev,
+                    [name]: 'File size must be less than 5MB'
+                }));
+                return;
+            }
+        }
+        
+        setFormData(prev => ({
+            ...prev,
+            [name]: file
+        }));
+        
         if (formErrors[name]) {
             setFormErrors(prev => ({
                 ...prev,
@@ -87,6 +114,14 @@ const SignUp = () => {
             errors.retypePassword = 'Passwords do not match';
         }
 
+        if (!formData.aadhar) {
+            errors.aadhar = 'Aadhar card image is required';
+        }
+
+        if (!formData.pan) {
+            errors.pan = 'PAN card image is required';
+        }
+
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -96,14 +131,56 @@ const SignUp = () => {
 
         if (!validateForm()) return;
 
+        setLoading(true);
+        setError('');
+
         try {
-            const response = await signUp(formData);
-            if (response) {
-                toast.success('Staff Successfully signed UP');
-                navigate(ROUTES.SIGN_IN, { replace: true });
+            // Create FormData for file upload
+            const formDataToSend = new FormData();
+            formDataToSend.append('name', formData.name.trim());
+            formDataToSend.append('email', formData.email.trim());
+            formDataToSend.append('phone', formData.phone.trim());
+            formDataToSend.append('password', formData.password);
+            formDataToSend.append('retypePassword', formData.retypePassword);
+            formDataToSend.append('aadhar', formData.aadhar);
+            formDataToSend.append('pan', formData.pan);
+
+            console.log('Sending staff signup data with files');
+
+            // Use direct fetch for FormData submission
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE_URL}/auth/staff-signup`, {
+                method: 'POST',
+                headers: {
+                    ...(token && { Authorization: `Bearer ${token}` }),
+                },
+                body: formDataToSend,
+            });
+
+            const contentType = response.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error(`Server returned non-JSON response. Status: ${response.status}`);
             }
+            
+            if (!response.ok) {
+                console.error('Server error response:', data);
+                throw new Error(data.message || `Staff signup failed with status ${response.status}`);
+            }
+
+            toast.success('Staff successfully signed up! Awaiting SuperAdmin verification.');
+            navigate(ROUTES.SIGN_IN, { replace: true });
+
         } catch (err) {
             console.error('Staff signup error:', err.message);
+            setError(err.message || 'Staff signup failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -221,6 +298,40 @@ const SignUp = () => {
                             className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.retypePassword ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200`}
                         />
                         {formErrors.retypePassword && <p className="text-red-500 text-xs mt-1">{formErrors.retypePassword}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="aadhar" className="text-sm font-semibold text-gray-700 block mb-1">
+                            Aadhar  Image
+                        </label>
+                        <input
+                            id="aadhar"
+                            name="aadhar"
+                            type="file"
+                            accept="image/*"
+                            required
+                            onChange={handleFileChange}
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.aadhar ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100`}
+                        />
+                        {formErrors.aadhar && <p className="text-red-500 text-xs mt-1">{formErrors.aadhar}</p>}
+                        <p className="text-xs text-gray-500 mt-1">Upload clear image of your Aadhar card (Max 5MB)</p>
+                    </div>
+
+                    <div>
+                        <label htmlFor="pan" className="text-sm font-semibold text-gray-700 block mb-1">
+                            PAN  Image
+                        </label>
+                        <input
+                            id="pan"
+                            name="pan"
+                            type="file"
+                            accept="image/*"
+                            required
+                            onChange={handleFileChange}
+                            className={`w-full px-4 py-3 bg-white rounded-lg border-2 ${formErrors.pan ? 'border-red-500' : 'border-gray-900'} focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100`}
+                        />
+                        {formErrors.pan && <p className="text-red-500 text-xs mt-1">{formErrors.pan}</p>}
+                        <p className="text-xs text-gray-500 mt-1">Upload clear image of your PAN card (Max 5MB)</p>
                     </div>
 
                     <div className="pt-4">
