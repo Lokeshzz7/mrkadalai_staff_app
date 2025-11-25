@@ -4,7 +4,7 @@ import { ROUTES } from '../../utils/constants.js';
 import toast from 'react-hot-toast';
 
 // Define your API base URL here, consistent with your api.js
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://51.21.198.214:5500/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://13.201.49.59:5500/api';
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
